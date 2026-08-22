@@ -132,6 +132,20 @@ export default function Home() {
   const [docPassword, setDocPassword] = useState("password123");
   const [isRegisteringDoctor, setIsRegisteringDoctor] = useState(false);
 
+  // Lab Manager Gateway State
+  const [labIdInput, setLabIdInput] = useState("LAB-CENTRAL-109");
+  const [labManagerIdInput, setLabManagerIdInput] = useState("MGR-MEHTA-9182");
+  const [labPasswordInput, setLabPasswordInput] = useState("••••••••");
+  const [labManagerUser, setLabManagerUser] = useState({
+    labId: "LAB-CENTRAL-109",
+    facilityName: "HealthBridge Central Diagnostic Hub",
+    managerId: "MGR-MEHTA-9182",
+    managerName: "Dr. Rajesh Mehta, MD (Pathology)",
+    role: "Chief Pathologist & Laboratory Operations Director",
+    licenseNumber: "MCI-DEL-2014-8849",
+    nablNumber: "NABL CERTIFIED · MC-2024-9182"
+  });
+
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [txnId, setTxnId] = useState<string>("");
   const [maskedMobile, setMaskedMobile] = useState<string>("+91 ••••••4529");
@@ -369,6 +383,7 @@ export default function Home() {
         </aside>
         <div className="app-canvas">
           <LaboratoryPortal
+            manager={labManagerUser}
             onSwitchToPatient={() => {
               setPortalChoice("patient");
               setStage("dashboard");
@@ -803,34 +818,116 @@ export default function Home() {
             {portalChoice === "laboratory" && (
               <div className="ticket-card animate-fadeIn">
                 <div className="ticket-topline">
-                  <span className="ticket-label">DIAGNOSTIC LABORATORY</span>
-                  <span className="prototype-badge"><Sparkles size={13} /> HIP Integration</span>
+                  <span className="ticket-label">DIAGNOSTIC LABORATORY GATEWAY</span>
+                  <span className="prototype-badge"><Sparkles size={13} /> NABL & HIP Node</span>
                 </div>
-                <h2>Publish Diagnostic Signal.</h2>
+                <h2>Lab Manager Authentication.</h2>
                 <p className="ticket-description">
-                  Turn raw lab analyzer outputs into structured FHIR Observation & DiagnosticReport resources for the patient locker.
+                  Authorized access for Lab Managers and Chief Pathologists to verify specimen telemetry, sign reports, and release FHIR R4 Bundles.
                 </p>
 
-                <div className="my-6 p-4 bg-[var(--paper)] rounded-xl border border-[var(--line)] space-y-3">
-                  <span className="text-xs font-bold block text-[var(--marigold)] flex items-center gap-1.5">
-                    <FlaskConical size={16} /> Apollo Diagnostic Labs (HIP_APOLLO_03)
-                  </span>
-                  <p className="text-xs text-[var(--rose-soft)] leading-relaxed">
-                    Connected diagnostic laboratory node configured to sign and publish biochemistry, lipid panels, and pathology bundles.
-                  </p>
+                <div className="space-y-3.5 my-5">
+                  <div>
+                    <label className="field-label">Diagnostic Facility / HIP Node ID</label>
+                    <input
+                      type="text"
+                      value={labIdInput}
+                      onChange={(e) => setLabIdInput(e.target.value)}
+                      placeholder="e.g. LAB-CENTRAL-109 or HIP_APOLLO_03"
+                      className="w-full bg-white border border-[var(--line)] rounded-xl px-4 py-2.5 text-xs font-mono font-bold text-[var(--rose)] outline-none focus:ring-2 focus:ring-[var(--marigold)]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="field-label">Lab Manager / Pathologist License ID</label>
+                    <input
+                      type="text"
+                      value={labManagerIdInput}
+                      onChange={(e) => setLabManagerIdInput(e.target.value)}
+                      placeholder="e.g. MGR-MEHTA-9182"
+                      className="w-full bg-white border border-[var(--line)] rounded-xl px-4 py-2.5 text-xs font-mono font-bold text-[var(--rose)] outline-none focus:ring-2 focus:ring-[var(--marigold)]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="field-label">Security Passcode / Password</label>
+                    <input
+                      type="password"
+                      value={labPasswordInput}
+                      onChange={(e) => setLabPasswordInput(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-white border border-[var(--line)] rounded-xl px-4 py-2.5 text-xs font-mono font-bold text-[var(--rose)] outline-none focus:ring-2 focus:ring-[var(--marigold)]"
+                    />
+                  </div>
+
+                  {/* Registered Lab Nodes Presets */}
+                  <div>
+                    <label className="text-[10px] font-mono uppercase text-[var(--rose-soft)] block mb-1">
+                      Quick Station Presets:
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {[
+                        {
+                          labId: "LAB-CENTRAL-109",
+                          facilityName: "HealthBridge Central Diagnostic Hub",
+                          managerId: "MGR-MEHTA-9182",
+                          managerName: "Dr. Rajesh Mehta, MD (Pathology)",
+                          role: "Chief Pathologist & Operations Director",
+                          licenseNumber: "MCI-DEL-2014-8849",
+                          nablNumber: "NABL CERTIFIED · MC-2024-9182"
+                        },
+                        {
+                          labId: "LAB-APOLLO-03",
+                          facilityName: "Apollo Diagnostic Labs (HIP_03)",
+                          managerId: "MGR-RAO-4401",
+                          managerName: "Dr. Sunita Rao, MD (Biochem)",
+                          role: "Senior Lab Manager & QC Lead",
+                          licenseNumber: "MCI-MUM-2017-4401",
+                          nablNumber: "NABL ACCREDITED · MC-2023-8819"
+                        }
+                      ].map((preset) => (
+                        <button
+                          key={preset.labId}
+                          type="button"
+                          onClick={() => {
+                            setLabIdInput(preset.labId);
+                            setLabManagerIdInput(preset.managerId);
+                            setLabManagerUser(preset);
+                            toast.info(`Selected: ${preset.facilityName} (${preset.managerName})`);
+                          }}
+                          className={`p-2.5 text-left rounded-xl border text-[11px] font-semibold transition-all ${
+                            labIdInput === preset.labId
+                              ? "bg-[#fff8ea] border-[var(--marigold)] text-[var(--rose)] shadow-2xs"
+                              : "bg-white border-[var(--line)] text-[var(--rose)] hover:bg-[var(--paper)]"
+                          }`}
+                        >
+                          <strong className="block truncate text-xs">{preset.facilityName}</strong>
+                          <span className="text-[9px] font-mono text-[var(--marigold)] font-bold block mt-0.5">
+                            {preset.managerName} · {preset.managerId}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="ticket-actions">
                   <button
                     className="signal-button bg-[var(--marigold)] hover:bg-[#b57600]"
                     onClick={() => {
-                      toast.success("Diagnostic Laboratory Workspace Initialized");
+                      if (!labIdInput.trim() || !labManagerIdInput.trim()) {
+                        toast.error("Please enter both Lab ID and Manager ID.");
+                        return;
+                      }
+                      toast.success(`Lab Manager Authenticated: ${labManagerUser.managerName}`, {
+                        description: `Station: ${labManagerUser.facilityName} (${labManagerUser.labId})`
+                      });
                       setPortalChoice("laboratory");
                       setStage("dashboard");
                     }}
                     type="button"
                   >
-                    Open Diagnostic Workbench <ArrowRight size={18} />
+                    Authenticate Lab Manager & Enter Space <ArrowRight size={18} />
                   </button>
                   <button
                     className="quiet-button"
@@ -840,6 +937,8 @@ export default function Home() {
                     Back to Patient Login
                   </button>
                 </div>
+
+                <div className="privacy-strip"><ShieldCheck size={16} /><span>Access restricted to certified Lab Managers under NABL ISO 15189 protocol.</span></div>
               </div>
             )}
 

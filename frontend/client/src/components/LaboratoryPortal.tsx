@@ -1,44 +1,68 @@
 import React, { useState, useEffect } from "react";
 import {
-  FlaskConical,
-  TestTube,
-  FileCheck2,
-  Clock,
-  ShieldCheck,
-  Search,
-  Plus,
-  RefreshCw,
-  ArrowRight,
-  Download,
-  Building2,
-  Calendar,
-  User,
-  Sparkles,
-  FileCode,
-  Check,
-  CheckCircle2,
-  X,
-  LogOut,
-  MapPin,
-  Award,
-  Activity
+  FlaskConical as FlaskIcon,
+  TestTube as TubeIcon,
+  FileCheck2 as FileCheckIcon,
+  Clock as ClockIcon,
+  ShieldCheck as ShieldIcon,
+  Search as SearchIcon,
+  Plus as PlusIcon,
+  RefreshCw as RefreshIcon,
+  ArrowRight as ArrowIcon,
+  Download as DownloadIcon,
+  Building2 as BuildingIcon,
+  Calendar as CalendarIcon,
+  User as UserIcon,
+  Sparkles as SparklesIcon,
+  FileCode as FileCodeIcon,
+  Check as CheckIcon,
+  CheckCircle2 as CheckCircleIcon,
+  X as CloseIcon,
+  LogOut as LogOutIcon,
+  MapPin as MapPinIcon,
+  Award as AwardIcon,
+  Activity as ActivityIcon,
+  UserCheck as ManagerIcon,
+  History as HistoryIcon,
+  CheckCheck as VerifiedIcon,
+  FileBadge as BadgeIcon
 } from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { downloadDiagnosticReportPdf } from "@/lib/pdfGenerator";
+
+export interface LabManagerUser {
+  labId: string;
+  facilityName: string;
+  managerId: string;
+  managerName: string;
+  role: string;
+  licenseNumber: string;
+  nablNumber: string;
+}
 
 interface LaboratoryPortalProps {
   onSwitchToPatient?: () => void;
   onSwitchToDoctor?: () => void;
   onSignOut?: () => void;
+  manager?: LabManagerUser;
 }
 
 export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
   onSwitchToPatient,
   onSwitchToDoctor,
   onSignOut,
+  manager = {
+    labId: "LAB-CENTRAL-109",
+    facilityName: "HealthBridge Central Diagnostic Hub",
+    managerId: "MGR-MEHTA-9182",
+    managerName: "Dr. Rajesh Mehta, MD (Pathology)",
+    role: "Chief Pathologist & Laboratory Operations Director",
+    licenseNumber: "MCI-DEL-2014-8849",
+    nablNumber: "NABL CERTIFIED · MC-2024-9182"
+  }
 }) => {
-  const [activeTab, setActiveTab] = useState<"orders" | "tests" | "reports" | "hl7" | "network" | "appointments">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "work" | "tests" | "reports" | "hl7" | "appointments" | "network">("orders");
   const [loading, setLoading] = useState(false);
   const [fhirModalOpen, setFhirModalOpen] = useState(false);
   const [selectedOrderIndex, setSelectedOrderIndex] = useState(0);
@@ -92,6 +116,65 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
     }
   ]);
 
+  // Logged-in Manager Work Done & Audit Trail
+  const [managerActivities, setManagerActivities] = useState([
+    {
+      id: "ACT-8812",
+      type: "REPORT_SIGNED",
+      title: "Signed & Released Diagnostic Report REP-9820",
+      patient: "Priya Patel (PAT-1002)",
+      panel: "Liver Function Panel (LFT)",
+      time: "Today, 08:52 AM",
+      status: "RELEASED",
+      dscCode: "DSC-SHA256-8812-OK",
+      summary: "Verified 9 biochemical parameters. Digital certificate affixed and FHIR R4 Bundle broadcasted to ABDM."
+    },
+    {
+      id: "ACT-8811",
+      type: "HL7_VALIDATION",
+      title: "Validated Automated LIMS Telemetry Stream MSG-9820-001",
+      patient: "Priya Patel (PAT-1002)",
+      panel: "Siemens Advia Chemistry Analyzer",
+      time: "Today, 08:46 AM",
+      status: "CONVERTED",
+      dscCode: "HL7-TRANS-OK",
+      summary: "Ingested raw HL7 v2.5 ORU^R01 message and mapped OBX segments to standard LOINC codes."
+    },
+    {
+      id: "ACT-8810",
+      type: "SPECIMEN_VERIFY",
+      title: "Approved Critical Specimen Batch #41 (EDTA K2 Tubes)",
+      patient: "Rahul Sharma & 5 others",
+      panel: "Hematology Batch",
+      time: "Today, 07:45 AM",
+      status: "VERIFIED",
+      dscCode: "QC-BATCH-PASS",
+      summary: "Pre-analytical quality check passed: zero hemolysis, adequate fill volume (3.0 mL)."
+    },
+    {
+      id: "ACT-8809",
+      type: "CALIBRATION",
+      title: "Calibrated Sysmex XN-1000 5-Part Differential Analyzer",
+      patient: "Internal Quality Control (IQC)",
+      panel: "Instrument Standard #04",
+      time: "Yesterday, 06:30 PM",
+      status: "CALIBRATED",
+      dscCode: "CALIB-CERT-9182",
+      summary: "Levey-Jennings chart within ±1.5 SD across all CBC parameters. Approved for 24h operational cycle."
+    },
+    {
+      id: "ACT-8808",
+      type: "PHLEBOTOMY_DISPATCH",
+      title: "Dispatched Phlebotomist Suresh Kumar for Morning Home Route",
+      patient: "Rahul Sharma (APT-301) + 3 Patients",
+      panel: "Bandra West Phlebotomy Zone",
+      time: "Yesterday, 05:15 PM",
+      status: "ASSIGNED",
+      dscCode: "ROUTE-LOG-301",
+      summary: "Cold-chain kit #09 verified with digital temperature sensor (4°C maintained)."
+    }
+  ]);
+
   const catalog = [
     { code: "CBC001", name: "Complete Blood Count (CBC)", category: "Hematology", price: "₹450.00", parameters: 14, turnaround: "6 Hours" },
     { code: "LIP002", name: "Lipid Profile", category: "Biochemistry", price: "₹650.00", parameters: 6, turnaround: "12 Hours" },
@@ -128,7 +211,8 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
                 status: "final",
                 code: { text: "Liver Function Panel" },
                 subject: { reference: "Patient/PAT-1002", display: "Priya Patel" },
-                conclusion: "Normal physiological parameters."
+                performer: [{ display: `${manager.facilityName} (${manager.labId})` }],
+                conclusion: "Normal physiological parameters verified by Lab Manager."
               }
             },
             {
@@ -152,64 +236,108 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
     }
   };
 
+  const handleSignReport = (orderId: string, patientName: string) => {
+    const newActivity = {
+      id: `ACT-${Math.floor(1000 + Math.random() * 9000)}`,
+      type: "REPORT_SIGNED",
+      title: `Signed & Released Report for ${orderId}`,
+      patient: patientName,
+      panel: "Diagnostic Investigation",
+      time: "Just now",
+      status: "RELEASED",
+      dscCode: `DSC-SHA256-${Date.now().toString().slice(-6)}-OK`,
+      summary: `Approved by Lab Manager ${manager.managerName}. Digital certificate affixed and FHIR R4 broadcasted.`
+    };
+    setManagerActivities([newActivity, ...managerActivities]);
+    toast.success(`🎉 Report for ${orderId} verified and signed by ${manager.managerName}!`);
+  };
+
   const selectedOrder = orders[selectedOrderIndex] || orders[0];
 
   return (
     <div className="space-y-6">
-      {/* Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-[var(--cream)] p-5 rounded-2xl border border-[var(--line)] shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-[var(--marigold)] text-white flex items-center justify-center shadow-md">
-            <FlaskConical size={24} />
+      {/* Top Manager Station Header Card */}
+      <div className="bg-[var(--cream)] p-6 rounded-2xl border border-[var(--line)] shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-[var(--marigold)] text-white flex items-center justify-center shadow-md">
+              <FlaskIcon size={30} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-mono text-[10px] font-bold tracking-widest text-[var(--coral-deep)] uppercase">
+                  {manager.labId} · DIAGNOSTIC STATION
+                </span>
+                <span className="bg-[#ffd5c1] text-[var(--rose)] text-[10px] px-2 py-0.5 rounded-full font-mono font-bold">
+                  {manager.nablNumber}
+                </span>
+              </div>
+              <h2 className="text-2xl font-bold text-[var(--rose)] font-['Bricolage_Grotesque']">
+                {manager.facilityName}
+              </h2>
+            </div>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] font-bold tracking-widest text-[var(--coral-deep)] uppercase">
-                DIAGNOSTIC PATHOLOGY NODE
-              </span>
-              <span className="bg-[#ffd5c1] text-[var(--rose)] text-[10px] px-2 py-0.5 rounded-full font-mono font-bold">
-                NABL CERTIFIED
+
+          {/* Manager Authentication Badge & Logout */}
+          <div className="flex items-center gap-3">
+            <div className="text-right hidden sm:block">
+              <div className="flex items-center gap-1.5 justify-end">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <strong className="text-xs text-[var(--rose)] font-bold">{manager.managerName}</strong>
+              </div>
+              <span className="text-[10px] font-mono text-[var(--rose-soft)] block">
+                {manager.role} · ID: {manager.managerId}
               </span>
             </div>
-            <h2 className="text-xl font-bold text-[var(--rose)] font-['Bricolage_Grotesque']">
-              HealthBridge Central Diagnostic Station #109
-            </h2>
+
+            <button
+              onClick={() => {
+                toast.info("Signed out from Diagnostic Laboratory Space");
+                if (onSignOut) onSignOut();
+              }}
+              className="px-4 py-2 rounded-full text-xs font-bold bg-[var(--rose)] text-[var(--cream)] flex items-center gap-2 shadow-sm hover:bg-black transition-all"
+            >
+              <LogOutIcon size={14} />
+              <span>Sign Out</span>
+            </button>
           </div>
         </div>
 
-        {/* Global Workspace Switchers & Sign Out */}
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={onSwitchToPatient}
-            className="px-3.5 py-1.5 rounded-full text-xs font-semibold border border-[var(--line)] text-[var(--rose)] hover:bg-[var(--paper)] transition-all"
-          >
-            Patient Locker
-          </button>
-          <button
-            onClick={onSwitchToDoctor}
-            className="px-3.5 py-1.5 rounded-full text-xs font-semibold border border-[var(--line)] text-[var(--rose)] hover:bg-[var(--paper)] transition-all"
-          >
-            Doctor Portal
-          </button>
-          <button
-            onClick={onSignOut}
-            className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-[var(--rose)] text-[var(--cream)] flex items-center gap-1.5 shadow-sm hover:opacity-95 transition-all"
-          >
-            <LogOut size={13} />
-            <span>Sign Out</span>
-          </button>
+        {/* Perspective Quick-Jump */}
+        <div className="pt-3 border-t border-[var(--line)] flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-[var(--rose-soft)] font-mono text-[11px]">
+            <BadgeIcon size={14} className="text-[var(--coral)]" />
+            <span>DSC Certificate: <strong>MCI-LIC-{manager.licenseNumber}</strong></span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] uppercase font-mono text-[var(--rose-soft)]">Switch Perspective:</span>
+            <button
+              onClick={onSwitchToPatient}
+              className="px-3 py-1 rounded-lg border border-[var(--line)] hover:bg-[var(--paper)] font-semibold text-[11px] text-[var(--rose)]"
+            >
+              Patient Locker
+            </button>
+            <button
+              onClick={onSwitchToDoctor}
+              className="px-3 py-1 rounded-lg border border-[var(--line)] hover:bg-[var(--paper)] font-semibold text-[11px] text-[var(--rose)]"
+            >
+              Doctor Portal
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Navigation Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1 border-b border-[var(--line)]">
         {[
-          { id: "orders", label: "Diagnostic Orders & Pipeline", icon: Activity },
-          { id: "tests", label: "Test Catalog & Panels", icon: FlaskConical },
-          { id: "reports", label: "Pathologist Signoff", icon: FileCheck2 },
-          { id: "hl7", label: "HL7 v2 ➔ FHIR Converter", icon: FileCode },
-          { id: "appointments", label: "Phlebotomy Queues", icon: Calendar },
-          { id: "network", label: "Lab Network Nodes", icon: Building2 },
+          { id: "orders", label: "Diagnostic Orders & Telemetry", icon: ActivityIcon },
+          { id: "work", label: `My Work & Activity Log (${managerActivities.length})`, icon: HistoryIcon },
+          { id: "reports", label: "Pathologist Signoff Queue", icon: FileCheckIcon },
+          { id: "tests", label: "Test Catalog & Panels", icon: FlaskIcon },
+          { id: "hl7", label: "HL7 v2 ➔ FHIR Converter", icon: FileCodeIcon },
+          { id: "appointments", label: "Phlebotomy Logistics", icon: CalendarIcon },
+          { id: "network", label: "Partner Lab Network", icon: BuildingIcon },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -245,19 +373,19 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
               <span className="vital-mark mark-1">O</span>
               <p>Active Lab Orders</p>
               <strong>42</strong>
-              <em><span></span> Processing in Laboratory</em>
+              <em><span></span> Processing in Station</em>
             </div>
             <div className="vital-card">
               <span className="vital-mark mark-2">V</span>
-              <p>Pending Verification</p>
+              <p>Pending My Signoff</p>
               <strong>18</strong>
-              <em><span></span> Pathologist Signoff Queue</em>
+              <em><span></span> Lab Manager Queue</em>
             </div>
             <div className="vital-card">
               <span className="vital-mark mark-3">R</span>
-              <p>Reports Released Today</p>
-              <strong>156</strong>
-              <em><span></span> 100% FHIR Converted</em>
+              <p>Verified by {manager.managerName.split(" ")[1]}</p>
+              <strong>{managerActivities.length}</strong>
+              <em><span></span> 100% Cryptographically Signed</em>
             </div>
           </div>
 
@@ -277,7 +405,7 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
                   onClick={() => setSelectedOrderIndex(idx)}
                 >
                   <div className={`record-icon ${idx % 2 === 0 ? "coral" : "marigold"}`}>
-                    <TestTube size={18} />
+                    <TubeIcon size={18} />
                   </div>
                   <div className="record-content">
                     <em>{row.orderId} · {row.status}</em>
@@ -286,7 +414,7 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
                   </div>
                   <div className="record-date">
                     <span>{row.date}</span>
-                    <ArrowRight size={13} />
+                    <ArrowIcon size={13} />
                   </div>
                 </button>
               ))}
@@ -312,55 +440,129 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
               </div>
 
               <div className="secure-meta">
-                <ShieldCheck size={16} />
+                <ShieldIcon size={16} />
                 <div>
                   <strong>HL7 V2 ORU^R01 Telemetry Validated</strong>
                   <div>Automated conversion to FHIR DiagnosticReport Release 4</div>
                 </div>
               </div>
 
-              <button
-                className="fhir-button"
-                onClick={() => setFhirModalOpen(true)}
-              >
-                <span>View Raw FHIR Bundle</span>
-                <span>JSON / R4 →</span>
-              </button>
+              <div className="flex gap-2">
+                <button
+                  className="fhir-button flex-1"
+                  onClick={() => setFhirModalOpen(true)}
+                >
+                  <span>Raw FHIR Bundle</span>
+                  <span>JSON →</span>
+                </button>
+
+                <button
+                  className="signal-button !py-2.5 !text-xs"
+                  onClick={() => handleSignReport(selectedOrder.orderId, selectedOrder.patientName)}
+                >
+                  <CheckCircleIcon size={14} />
+                  <span>Sign & Approve</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* TAB 2: TEST CATALOG */}
-      {activeTab === "tests" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {catalog.map((test, idx) => (
-            <div
-              key={test.code}
-              className="ticket-card !mb-0"
-              style={{ boxShadow: idx % 2 === 0 ? "8px 10px 0 var(--blush)" : "8px 10px 0 #f7d891" }}
-            >
-              <div className="flex justify-between items-center mb-3">
-                <span className="bg-[#ffd5c1] text-[var(--rose)] text-[9px] font-mono font-bold px-2 py-0.5 rounded-full">
-                  {test.category}
-                </span>
-                <span className="text-[10px] font-mono font-bold text-[var(--coral-deep)] flex items-center gap-1">
-                  <Check size={12} /> ACTIVE
-                </span>
-              </div>
-              <div className="font-mono text-xs font-bold text-[var(--coral-deep)]">{test.code}</div>
-              <h4 className="font-bold text-lg text-[var(--rose)] font-['Bricolage_Grotesque'] mt-1 mb-3">
-                {test.name}
-              </h4>
-              <div className="flex justify-between items-center pt-3 border-t border-[var(--line)] text-xs">
-                <span className="text-[var(--rose-soft)]">{test.parameters} Parameters</span>
-                <span className="text-[var(--rose-soft)] flex items-center gap-1">
-                  <Clock size={12} color="var(--marigold)" /> {test.turnaround}
-                </span>
-                <strong className="font-mono text-base text-[var(--coral)]">{test.price}</strong>
-              </div>
+      {/* TAB 2: MY WORK & ACTIVITY LOG */}
+      {activeTab === "work" && (
+        <div className="ticket-card">
+          <div className="flex flex-wrap justify-between items-center gap-3 mb-6 pb-4 border-b border-[var(--line)]">
+            <div>
+              <span className="ticket-label">MANAGER ACTIVITY & AUDIT TRAIL</span>
+              <h3 className="text-2xl font-bold text-[var(--rose)] font-['Bricolage_Grotesque'] mt-1">
+                Verified Work by {manager.managerName}
+              </h3>
+              <p className="text-xs text-[var(--rose-soft)] mt-0.5">
+                Complete cryptographically verifiable ledger of reports signed, QC validations, and calibrations performed at {manager.facilityName}.
+              </p>
             </div>
-          ))}
+
+            <button
+              onClick={() => {
+                const testAct = {
+                  id: `ACT-${Math.floor(1000 + Math.random() * 9000)}`,
+                  type: "CALIBRATION",
+                  title: "Performed Mid-Day Quality Control Baseline",
+                  patient: "Control Serum Batch #99",
+                  panel: "Chemistry & Electrolytes",
+                  time: "Just now",
+                  status: "PASS",
+                  dscCode: "IQC-PASS-OK",
+                  summary: "Zero variance across 6 test controls. Signed by Lab Manager."
+                };
+                setManagerActivities([testAct, ...managerActivities]);
+                toast.success("Added Quality Control validation to your Manager activity ledger!");
+              }}
+              className="signal-button !py-2 !px-3.5 !text-xs flex items-center gap-1.5"
+            >
+              <PlusIcon size={14} />
+              <span>Log Calibration / QC Action</span>
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {managerActivities.map((act) => (
+              <div
+                key={act.id}
+                className="p-4 bg-[var(--paper)] rounded-xl border border-[var(--line)] hover:border-[var(--coral)] transition-all space-y-2"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-lg bg-[#fae9df] text-[var(--coral-deep)] flex items-center justify-center font-mono font-bold text-xs">
+                      {act.type === "REPORT_SIGNED" ? <FileCheckIcon size={16} /> : act.type === "CALIBRATION" ? <FlaskIcon size={16} /> : <VerifiedIcon size={16} />}
+                    </span>
+                    <div>
+                      <strong className="text-sm font-bold text-[var(--rose)] block">{act.title}</strong>
+                      <span className="text-[10px] font-mono text-[var(--rose-soft)]">{act.patient} · {act.panel}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
+                      {act.status}
+                    </span>
+                    <span className="text-xs font-mono text-[var(--rose-soft)]">{act.time}</span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-[var(--rose-soft)] pl-10 leading-relaxed">
+                  {act.summary}
+                </p>
+
+                <div className="pl-10 pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-[#f0e3db] text-[10px] font-mono text-[var(--rose-soft)]">
+                  <span>DSC Audit Stamp: <strong className="text-[var(--coral-deep)]">{act.dscCode}</strong></span>
+                  {act.type === "REPORT_SIGNED" && (
+                    <button
+                      onClick={() => {
+                        toast.success(`Opening signed PDF for ${act.title}...`);
+                        downloadDiagnosticReportPdf({
+                          reportId: act.id,
+                          orderId: "ORD-9820",
+                          patientName: act.patient.split(" (")[0],
+                          patientId: "PAT-1002",
+                          testName: act.panel,
+                          pathologistName: manager.managerName,
+                          licenseNumber: manager.licenseNumber,
+                          facilityName: manager.facilityName,
+                          nablNumber: manager.nablNumber,
+                          conclusion: act.summary
+                        });
+                      }}
+                      className="text-[var(--coral-deep)] font-bold flex items-center gap-1 hover:underline"
+                    >
+                      <DownloadIcon size={11} /> Download Verified PDF Report
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -409,12 +611,16 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
                             patientName: o.patientName,
                             patientId: o.patientId,
                             testName: o.tests,
+                            pathologistName: manager.managerName,
+                            licenseNumber: manager.licenseNumber,
+                            facilityName: manager.facilityName,
+                            nablNumber: manager.nablNumber,
                             conclusion: o.details,
                           });
                         }}
                         className="workspace-chip !py-1 !px-2.5 !text-[10px]"
                       >
-                        <Download size={11} />
+                        <DownloadIcon size={11} />
                         <span>Download PDF</span>
                       </button>
                     </td>
@@ -426,7 +632,40 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
         </div>
       )}
 
-      {/* TAB 4: HL7 TO FHIR CONVERTER */}
+      {/* TAB 4: TEST CATALOG */}
+      {activeTab === "tests" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {catalog.map((test, idx) => (
+            <div
+              key={test.code}
+              className="ticket-card !mb-0"
+              style={{ boxShadow: idx % 2 === 0 ? "8px 10px 0 var(--blush)" : "8px 10px 0 #f7d891" }}
+            >
+              <div className="flex justify-between items-center mb-3">
+                <span className="bg-[#ffd5c1] text-[var(--rose)] text-[9px] font-mono font-bold px-2 py-0.5 rounded-full">
+                  {test.category}
+                </span>
+                <span className="text-[10px] font-mono font-bold text-[var(--coral-deep)] flex items-center gap-1">
+                  <CheckIcon size={12} /> ACTIVE
+                </span>
+              </div>
+              <div className="font-mono text-xs font-bold text-[var(--coral-deep)]">{test.code}</div>
+              <h4 className="font-bold text-lg text-[var(--rose)] font-['Bricolage_Grotesque'] mt-1 mb-3">
+                {test.name}
+              </h4>
+              <div className="flex justify-between items-center pt-3 border-t border-[var(--line)] text-xs">
+                <span className="text-[var(--rose-soft)]">{test.parameters} Parameters</span>
+                <span className="text-[var(--rose-soft)] flex items-center gap-1">
+                  <ClockIcon size={12} color="var(--marigold)" /> {test.turnaround}
+                </span>
+                <strong className="font-mono text-base text-[var(--coral)]">{test.price}</strong>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* TAB 5: HL7 TO FHIR CONVERTER */}
       {activeTab === "hl7" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="ticket-card !mb-0 space-y-3">
@@ -448,7 +687,7 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
               disabled={isConvertingHl7}
               className="signal-button w-full justify-center"
             >
-              <RefreshCw size={14} className={isConvertingHl7 ? "spin" : ""} />
+              <RefreshIcon size={14} className={isConvertingHl7 ? "spin" : ""} />
               <span>Convert to FHIR R4 DiagnosticReport</span>
             </button>
           </div>
@@ -468,7 +707,7 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
         </div>
       )}
 
-      {/* TAB 5: APPOINTMENTS */}
+      {/* TAB 6: APPOINTMENTS */}
       {activeTab === "appointments" && (
         <div className="ticket-card">
           <div className="flex justify-between items-center mb-4">
@@ -518,7 +757,7 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
         </div>
       )}
 
-      {/* TAB 6: NETWORK */}
+      {/* TAB 7: NETWORK */}
       {activeTab === "network" && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
@@ -533,7 +772,7 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
             >
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-[var(--coral)] text-white flex items-center justify-center">
-                  <Building2 size={20} />
+                  <BuildingIcon size={20} />
                 </div>
                 <div>
                   <span className="font-mono text-[10px] font-bold text-[var(--coral-deep)]">{lab.id}</span>
@@ -542,17 +781,17 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
               </div>
               <div className="space-y-1.5 text-xs text-[var(--rose-soft)] my-3">
                 <div className="flex items-center gap-1.5">
-                  <MapPin size={13} color="var(--coral)" /> {lab.location}
+                  <MapPinIcon size={13} color="var(--coral)" /> {lab.location}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Award size={13} color="var(--marigold)" /> {lab.accreditation}
+                  <AwardIcon size={13} color="var(--marigold)" /> {lab.accreditation}
                 </div>
               </div>
               <div className="pt-3 border-t border-[var(--line)] flex justify-between items-center text-xs">
                 <span className="bg-[#ffd5c1] text-[var(--rose)] px-2 py-0.5 rounded-full font-mono text-[10px] font-bold">OPERATIONAL</span>
                 <button className="workspace-chip !py-1 !px-2.5 !text-[10px]">
                   <span>Lab Node</span>
-                  <ArrowRight size={11} />
+                  <ArrowIcon size={11} />
                 </button>
               </div>
             </div>
@@ -581,8 +820,8 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
         "status": "final",
         "code": { "text": "${selectedOrder.tests}" },
         "subject": { "reference": "Patient/${selectedOrder.patientId}", "display": "${selectedOrder.patientName}" },
-        "performer": [{ "display": "HealthBridge Central PathLab (NABL-109)" }],
-        "conclusion": "Specimen analysis verified and signed."
+        "performer": [{ "display": "${manager.facilityName} (${manager.labId})" }],
+        "conclusion": "Specimen analysis verified and signed by Lab Manager ${manager.managerName}."
       }
     }
   ]
