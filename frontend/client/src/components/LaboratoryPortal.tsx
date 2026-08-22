@@ -42,15 +42,11 @@ export interface LabManagerUser {
 }
 
 interface LaboratoryPortalProps {
-  onSwitchToPatient?: () => void;
-  onSwitchToDoctor?: () => void;
   onSignOut?: () => void;
   manager?: LabManagerUser;
 }
 
 export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
-  onSwitchToPatient,
-  onSwitchToDoctor,
   onSignOut,
   manager = {
     labId: "LAB-CENTRAL-109",
@@ -303,27 +299,16 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
           </div>
         </div>
 
-        {/* Perspective Quick-Jump */}
+        {/* Station Security & Cryptographic Certificate Status */}
         <div className="pt-3 border-t border-[var(--line)] flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-[var(--rose-soft)] font-mono text-[11px]">
             <BadgeIcon size={14} className="text-[var(--coral)]" />
             <span>DSC Certificate: <strong>MCI-LIC-{manager.licenseNumber}</strong></span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase font-mono text-[var(--rose-soft)]">Switch Perspective:</span>
-            <button
-              onClick={onSwitchToPatient}
-              className="px-3 py-1 rounded-lg border border-[var(--line)] hover:bg-[var(--paper)] font-semibold text-[11px] text-[var(--rose)]"
-            >
-              Patient Locker
-            </button>
-            <button
-              onClick={onSwitchToDoctor}
-              className="px-3 py-1 rounded-lg border border-[var(--line)] hover:bg-[var(--paper)] font-semibold text-[11px] text-[var(--rose)]"
-            >
-              Doctor Portal
-            </button>
+          <div className="flex items-center gap-2 text-[var(--rose-soft)] font-mono text-[11px]">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span>ABDM Diagnostic HIP Node Active</span>
           </div>
         </div>
       </div>

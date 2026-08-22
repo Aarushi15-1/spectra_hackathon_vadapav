@@ -384,14 +384,6 @@ export default function Home() {
         <div className="app-canvas">
           <LaboratoryPortal
             manager={labManagerUser}
-            onSwitchToPatient={() => {
-              setPortalChoice("patient");
-              setStage("dashboard");
-            }}
-            onSwitchToDoctor={() => {
-              setPortalChoice("doctor");
-              setStage("dashboard");
-            }}
             onSignOut={() => {
               setStage("gateway");
               setPortalChoice("patient");
