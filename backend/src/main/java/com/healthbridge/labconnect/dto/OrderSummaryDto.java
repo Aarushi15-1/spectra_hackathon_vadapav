@@ -1,12 +1,5 @@
 package com.healthbridge.labconnect.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class OrderSummaryDto {
     private String orderId;
     private String patientName;

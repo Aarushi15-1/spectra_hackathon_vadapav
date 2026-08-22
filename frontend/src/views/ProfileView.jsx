@@ -1,92 +1,96 @@
 import React from 'react';
-import { Shield, Mail, Phone, Server } from 'lucide-react';
+import { Shield, Mail, Phone, Server, CheckCircle2, XCircle } from 'lucide-react';
 import { getApiBaseUrl } from '../services/apiService';
 
 const ProfileView = ({ backendHealth }) => {
   return (
     <div className="view-container">
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: '700' }}>User Profile & System Preferences</h3>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>LabConnect system operator credentials and API environment settings</p>
+      <div>
+        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: '800', color: '#ffffff' }}>Pathologist Profile & System Settings</h3>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Operator credentials and cloud gateway connection configuration</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
         {/* Profile Card */}
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1.5rem', boxShadow: 'var(--shadow-card)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-red), var(--accent-orange))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '1.25rem' }}>
+        <div className="stat-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ width: '56px', height: '56px', borderRadius: 'var(--radius-md)', background: 'linear-gradient(135deg, var(--accent-emerald), var(--accent-cyan))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#090d16', fontWeight: '800', fontSize: '1.3rem' }}>
               LC
             </div>
             <div>
-              <h4 style={{ fontSize: '1.1rem', fontWeight: '700' }}>Lab Administrator</h4>
-              <span className="badge badge-warning" style={{ marginTop: '0.2rem' }}>ROLE_PATHOLOGIST</span>
+              <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: '800', color: '#ffffff' }}>Dr. Lab Administrator</h4>
+              <span className="badge badge-warning" style={{ marginTop: '0.35rem' }}>ROLE_PATHOLOGIST</span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Mail size={16} color="var(--accent-red)" /> admin@healthbridge.labconnect.com
+              <Mail size={16} color="var(--accent-cyan)" />
+              <span style={{ color: 'var(--text-main)' }}>admin@healthbridge.labconnect.com</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Phone size={16} color="var(--accent-orange)" /> +91 (022) 4920-8800
+              <Phone size={16} color="var(--accent-amber)" />
+              <span style={{ color: 'var(--text-main)' }}>+91 (022) 4920-8800</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Shield size={16} color="#059669" /> Pathologist Accreditation ID: PATH-IND-88219
+              <Shield size={16} color="var(--accent-emerald)" />
+              <span style={{ color: 'var(--text-main)' }}>NABL Accreditation License: <strong>PATH-IND-88219</strong></span>
             </div>
           </div>
         </div>
 
-        {/* API Settings Card */}
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1.5rem', boxShadow: 'var(--shadow-card)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <Server size={20} color="var(--accent-red)" />
-            <h4 style={{ fontSize: '1.1rem', fontWeight: '700' }}>Backend Integration Settings</h4>
+        {/* Backend Settings Card */}
+        <div className="stat-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <Server size={20} color="var(--accent-cyan)" />
+            <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', fontWeight: '700', color: '#ffffff' }}>Cloud Backend Configuration</h4>
           </div>
 
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.85rem' }}>
             <div>
-              <label style={{ display: 'block', color: 'var(--text-main)', fontWeight: '600', marginBottom: '0.35rem' }}>Spring Boot Backend Base URL</label>
+              <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem', fontWeight: '700' }}>Gateway Base URL</label>
               <input
                 type="text"
                 readOnly
                 value={getApiBaseUrl()}
                 style={{
                   width: '100%',
-                  padding: '0.6rem 0.8rem',
+                  padding: '0.6rem 0.85rem',
                   borderRadius: 'var(--radius-sm)',
-                  background: '#f8fafc',
+                  background: 'rgba(15, 23, 42, 0.8)',
                   border: '1px solid var(--border-color)',
-                  color: 'var(--accent-red)',
-                  fontFamily: 'monospace',
-                  fontWeight: '600'
+                  color: 'var(--accent-cyan)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.85rem',
+                  outline: 'none'
                 }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', color: 'var(--text-main)', fontWeight: '600', marginBottom: '0.35rem' }}>Health Endpoint Path</label>
+              <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem', fontWeight: '700' }}>Health Endpoint</label>
               <input
                 type="text"
                 readOnly
                 value="/api/health"
                 style={{
                   width: '100%',
-                  padding: '0.6rem 0.8rem',
+                  padding: '0.6rem 0.85rem',
                   borderRadius: 'var(--radius-sm)',
-                  background: '#f8fafc',
+                  background: 'rgba(15, 23, 42, 0.8)',
                   border: '1px solid var(--border-color)',
                   color: 'var(--text-main)',
-                  fontFamily: 'monospace'
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.85rem',
+                  outline: 'none'
                 }}
               />
             </div>
 
-            <div style={{ marginTop: '0.5rem', padding: '0.85rem', background: backendHealth?.connected ? 'rgba(16, 185, 129, 0.1)' : 'rgba(225, 29, 72, 0.1)', borderRadius: 'var(--radius-sm)', border: `1px solid ${backendHealth?.connected ? 'rgba(16, 185, 129, 0.3)' : 'rgba(225, 29, 72, 0.3)'}` }}>
-              <div style={{ fontWeight: '700', color: backendHealth?.connected ? '#059669' : 'var(--accent-red)' }}>
-                {backendHealth?.connected ? '✓ Connected to Spring Boot' : '✗ Disconnected'}
-              </div>
-              <div style={{ fontSize: '0.75rem', marginTop: '0.2rem', color: 'var(--text-main)' }}>
-                {backendHealth?.data ? JSON.stringify(backendHealth.data) : (backendHealth?.error || 'Checking status...')}
+            <div style={{ padding: '0.85rem 1rem', background: backendHealth?.connected ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)', borderRadius: 'var(--radius-sm)', border: `1px solid ${backendHealth?.connected ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)'}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '700', color: backendHealth?.connected ? '#34d399' : '#f43f5e' }}>
+                {backendHealth?.connected ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+                <span>{backendHealth?.connected ? 'Live Spring Boot Connection Active' : 'Connecting to Core Service...'}</span>
               </div>
             </div>
           </div>

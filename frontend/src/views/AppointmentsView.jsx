@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Clock, MapPin, User, Plus } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Plus, ArrowUpRight } from 'lucide-react';
 
 const mockBookings = [
   { id: 'APT-301', patient: 'Rahul Sharma', test: 'CBC & Lipid Profile', slot: 'Today, 07:30 AM - 08:30 AM', type: 'Home Collection', phlebotomist: 'Suresh Kumar', status: 'CONFIRMED' },
@@ -10,22 +10,24 @@ const mockBookings = [
 const AppointmentsView = () => {
   return (
     <div className="view-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '700' }}>Sample Collection Appointments</h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Schedule home collections and lab visit slots for specimen drawing</p>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: '800', color: '#ffffff' }}>Sample Collection Appointments</h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Home phlebotomy visits and laboratory specimen collection queues</p>
         </div>
-        <button className="btn btn-primary">
-          <Plus size={16} /> Book Collection Slot
+        <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Plus size={16} />
+          <span>Book Collection Slot</span>
         </button>
       </div>
 
-      <div className="data-table-container">
-        <div className="table-header">
+      <div className="data-table-card">
+        <div className="section-header">
           <h3>Collection Schedule</h3>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Real-time Schedule</span>
         </div>
 
-        <table>
+        <table className="data-table">
           <thead>
             <tr>
               <th>Appt ID</th>
@@ -33,23 +35,32 @@ const AppointmentsView = () => {
               <th>Requested Tests</th>
               <th>Time Slot</th>
               <th>Collection Mode</th>
-              <th>Phlebotomist</th>
+              <th>Assigned Phlebotomist</th>
               <th>Status</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {mockBookings.map((apt) => (
               <tr key={apt.id}>
-                <td style={{ fontWeight: '600', color: 'var(--accent-cyan)' }}>{apt.id}</td>
-                <td style={{ fontWeight: '500' }}>{apt.patient}</td>
-                <td>{apt.test}</td>
-                <td style={{ color: 'var(--text-muted)' }}>{apt.slot}</td>
+                <td style={{ fontFamily: 'var(--font-mono)', fontWeight: '700', color: 'var(--accent-cyan)' }}>{apt.id}</td>
+                <td style={{ fontWeight: '600', color: '#ffffff' }}>{apt.patient}</td>
+                <td style={{ color: 'var(--text-muted)' }}>{apt.test}</td>
+                <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--text-light)' }}>{apt.slot}</td>
                 <td>
                   <span className="badge badge-info">{apt.type}</span>
                 </td>
-                <td>{apt.phlebotomist}</td>
+                <td style={{ color: 'var(--text-main)' }}>{apt.phlebotomist}</td>
                 <td>
-                  <span className="badge badge-success">{apt.status}</span>
+                  <span className={`badge ${apt.status === 'CONFIRMED' ? 'badge-success' : (apt.status === 'IN_PROGRESS' ? 'badge-warning' : 'badge-info')}`}>
+                    {apt.status}
+                  </span>
+                </td>
+                <td>
+                  <button className="btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <span>Manage</span>
+                    <ArrowUpRight size={12} />
+                  </button>
                 </td>
               </tr>
             ))}

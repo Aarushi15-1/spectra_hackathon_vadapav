@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Download, CheckCircle, Clock } from 'lucide-react';
+import { FileText, Download, CheckCircle, Clock, ShieldCheck, ArrowUpRight } from 'lucide-react';
 
 const mockReports = [
   { reportId: 'REP-7701', orderId: 'ORD-9819', patient: 'Amit Verma', test: 'HbA1c, Fasting Blood Sugar', pathologist: 'Dr. S. K. Mehta', status: 'VERIFIED', date: '2026-08-22 08:30 AM' },
@@ -10,26 +10,27 @@ const mockReports = [
 const LabReportsView = () => {
   return (
     <div className="view-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '700' }}>Diagnostic Reports</h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Review draft reports, perform pathologist verification, and release finalized reports</p>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: '800', color: '#ffffff' }}>Diagnostic Reports</h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Review draft reports, perform digital pathologist verification, and sign FHIR DiagnosticReports</p>
         </div>
       </div>
 
-      <div className="data-table-container">
-        <div className="table-header">
-          <h3>Lab Reports Status</h3>
+      <div className="data-table-card">
+        <div className="section-header">
+          <h3>Verified Reports Feed</h3>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>HL7 V2 / FHIR R4 Compliant</span>
         </div>
 
-        <table>
+        <table className="data-table">
           <thead>
             <tr>
               <th>Report ID</th>
               <th>Order Ref</th>
               <th>Patient Name</th>
-              <th>Tests Included</th>
-              <th>Verified By</th>
+              <th>Diagnostic Panel</th>
+              <th>Verified Pathologist</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -37,19 +38,20 @@ const LabReportsView = () => {
           <tbody>
             {mockReports.map((report) => (
               <tr key={report.reportId}>
-                <td style={{ fontWeight: '600', color: 'var(--accent-cyan)' }}>{report.reportId}</td>
-                <td>{report.orderId}</td>
-                <td style={{ fontWeight: '500' }}>{report.patient}</td>
-                <td>{report.test}</td>
-                <td style={{ color: 'var(--text-muted)' }}>{report.pathologist}</td>
+                <td style={{ fontFamily: 'var(--font-mono)', fontWeight: '700', color: 'var(--accent-cyan)' }}>{report.reportId}</td>
+                <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-light)', fontSize: '0.8rem' }}>{report.orderId}</td>
+                <td style={{ fontWeight: '600', color: '#ffffff' }}>{report.patient}</td>
+                <td style={{ color: 'var(--text-muted)' }}>{report.test}</td>
+                <td style={{ color: 'var(--text-light)' }}>{report.pathologist}</td>
                 <td>
                   <span className={`badge ${report.status === 'VERIFIED' ? 'badge-success' : 'badge-warning'}`}>
                     {report.status}
                   </span>
                 </td>
                 <td>
-                  <button className="btn btn-outline" style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}>
-                    <Download size={12} /> Download PDF
+                  <button className="btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Download size={12} />
+                    <span>Download PDF</span>
                   </button>
                 </td>
               </tr>

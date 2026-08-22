@@ -4,7 +4,11 @@ import {
   TestTube,
   FileCheck2,
   Clock,
-  Server
+  Server,
+  Activity,
+  ArrowUpRight,
+  ShieldCheck,
+  RefreshCw
 } from 'lucide-react';
 import { fetchDashboardStats, fetchRecentOrders } from '../services/apiService';
 
@@ -15,12 +19,12 @@ const DashboardView = ({ backendHealth }) => {
     pendingVerification: 18,
     reportsReleasedToday: 156,
     pipelineStages: [
-      { label: 'PENDING', desc: 'Order Created', color: '#64748b', bg: '#f1f5f9' },
-      { label: 'SAMPLE_COLLECTED', desc: 'Specimen Drawn', color: '#ea580c', bg: '#ffedd5' },
-      { label: 'IN_ANALYSIS', desc: 'Lab Processing', color: '#d97706', bg: '#fef3c7' },
-      { label: 'RESULT_READY', desc: 'Values Entered', color: '#e11d48', bg: '#ffe4e6' },
-      { label: 'VERIFIED', desc: 'Pathologist Approved', color: '#059669', bg: '#d1fae5' },
-      { label: 'COMPLETED', desc: 'Report Delivered', color: '#10b981', bg: '#ecfdf5' }
+      { label: 'PENDING', desc: 'Order Created', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.1)' },
+      { label: 'SAMPLE_COLLECTED', desc: 'Specimen Drawn', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
+      { label: 'IN_ANALYSIS', desc: 'Lab Processing', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)' },
+      { label: 'RESULT_READY', desc: 'Values Entered', color: '#f43f5e', bg: 'rgba(244, 63, 94, 0.1)' },
+      { label: 'VERIFIED', desc: 'Pathologist Approved', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
+      { label: 'COMPLETED', desc: 'Report Delivered', color: '#34d399', bg: 'rgba(52, 211, 153, 0.1)' }
     ]
   });
 
@@ -31,26 +35,32 @@ const DashboardView = ({ backendHealth }) => {
     { orderId: 'ORD-9818', patientName: 'Sunita Rao', tests: 'Thyroid Profile (T3, T4, TSH)', date: 'Yesterday, 04:20 PM', status: 'COMPLETED' }
   ]);
 
-  useEffect(() => {
-    const loadBackendData = async () => {
-      if (backendHealth?.connected) {
-        const liveStats = await fetchDashboardStats();
-        if (liveStats) {
-          setStats(liveStats);
-        }
-        const liveOrders = await fetchRecentOrders();
-        if (liveOrders) {
-          setRecentOrders(liveOrders);
-        }
+  const [loading, setLoading] = useState(false);
+
+  const loadBackendData = async () => {
+    setLoading(true);
+    try {
+      const liveStats = await fetchDashboardStats();
+      if (liveStats) {
+        setStats(liveStats);
       }
-    };
+      const liveOrders = await fetchRecentOrders();
+      if (liveOrders) {
+        setRecentOrders(liveOrders);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadBackendData();
   }, [backendHealth?.connected]);
 
   const getBadgeClass = (status) => {
     switch (status) {
-      case 'IN_ANALYSIS': return 'badge-warning';
-      case 'RESULT_READY': return 'badge-info';
+      case 'IN_ANALYSIS': return 'badge-info';
+      case 'RESULT_READY': return 'badge-warning';
       case 'VERIFIED': return 'badge-success';
       case 'COMPLETED': return 'badge-success';
       default: return 'badge-info';
@@ -59,123 +69,140 @@ const DashboardView = ({ backendHealth }) => {
 
   return (
     <div className="view-container">
-      {/* Banner showcasing live backend connection info */}
+      {/* Live Backend Connection Status Banner */}
       <div className="banner">
         <div className="banner-content">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-            <Server size={18} color="var(--accent-red)" />
-            <h3>Spring Boot Backend Connection Status</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.25rem' }}>
+            <Server size={20} color="var(--accent-emerald)" />
+            <h3>Spring Boot Core Connection</h3>
+            <span className={`badge ${backendHealth?.connected ? 'badge-success' : 'badge-danger'}`}>
+              {backendHealth?.connected ? 'ONLINE' : 'CONNECTING'}
+            </span>
           </div>
           <p>
-            Endpoint: <code style={{ background: '#ffffff', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-accent)', color: 'var(--accent-red)', fontWeight: '600' }}>http://localhost:8080/api/health</code>
+            API Gateway: <code style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-cyan)', background: 'rgba(6, 182, 212, 0.1)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>http://localhost:8080/api/health</code>
           </p>
-          <div style={{ fontSize: '0.825rem', marginTop: '0.4rem', color: 'var(--text-main)' }}>
-            Response: <span style={{ fontWeight: '700', color: backendHealth?.connected ? '#059669' : 'var(--accent-red)' }}>
-              {backendHealth?.data ? JSON.stringify(backendHealth.data) : (backendHealth?.error || 'Checking connection...')}
-            </span>
+          <div style={{ fontSize: '0.8rem', marginTop: '0.5rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <ShieldCheck size={14} color="var(--accent-emerald)" />
+            <span>Response: <strong style={{ color: backendHealth?.connected ? '#34d399' : '#f43f5e' }}>{backendHealth?.data ? JSON.stringify(backendHealth.data) : (backendHealth?.error || 'Checking gateway...')}</strong></span>
           </div>
         </div>
 
         <div>
-          <button className="btn btn-primary" onClick={() => window.location.reload()}>
-            Refresh Dashboard
+          <button className="btn-primary" onClick={loadBackendData} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <RefreshCw size={16} className={loading ? 'spin' : ''} />
+            <span>Sync Data</span>
           </button>
         </div>
       </div>
 
       {/* Metrics Row */}
-      <div className="card-grid">
+      <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-info">
-            <p>Total Registered Patients</p>
-            <h3>{stats.totalPatients.toLocaleString()}</h3>
+          <div className="stat-header">
+            <span className="stat-label">Total Patients</span>
+            <div className="stat-icon-wrapper" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)' }}>
+              <Users size={20} />
+            </div>
           </div>
-          <div className="stat-icon" style={{ background: 'var(--accent-orange-light)', color: 'var(--accent-orange)' }}>
-            <Users size={24} />
+          <div className="stat-value">{stats.totalPatients?.toLocaleString() || 1248}</div>
+          <div className="stat-subtext">
+            <span style={{ color: 'var(--accent-emerald)' }}>+14.2%</span> from last week
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-info">
-            <p>Active Lab Orders</p>
-            <h3>{stats.activeOrders}</h3>
+          <div className="stat-header">
+            <span className="stat-label">Active Orders</span>
+            <div className="stat-icon-wrapper" style={{ background: 'rgba(245, 158, 11, 0.15)', color: 'var(--accent-amber)' }}>
+              <Clock size={20} />
+            </div>
           </div>
-          <div className="stat-icon" style={{ background: '#fef3c7', color: '#d97706' }}>
-            <Clock size={24} />
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-info">
-            <p>Pending Verification</p>
-            <h3>{stats.pendingVerification}</h3>
-          </div>
-          <div className="stat-icon" style={{ background: 'var(--accent-red-light)', color: 'var(--accent-red)' }}>
-            <TestTube size={24} />
+          <div className="stat-value">{stats.activeOrders || 42}</div>
+          <div className="stat-subtext">
+            <span style={{ color: 'var(--accent-cyan)' }}>In pipeline</span> active analysis
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-info">
-            <p>Reports Released Today</p>
-            <h3>{stats.reportsReleasedToday}</h3>
+          <div className="stat-header">
+            <span className="stat-label">Pending Verification</span>
+            <div className="stat-icon-wrapper" style={{ background: 'rgba(244, 63, 94, 0.15)', color: 'var(--accent-coral)' }}>
+              <TestTube size={20} />
+            </div>
           </div>
-          <div className="stat-icon" style={{ background: '#d1fae5', color: '#059669' }}>
-            <FileCheck2 size={24} />
+          <div className="stat-value">{stats.pendingVerification || 18}</div>
+          <div className="stat-subtext">
+            <span style={{ color: 'var(--accent-coral)' }}>Pathologist review</span> required
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-header">
+            <span className="stat-label">Reports Released Today</span>
+            <div className="stat-icon-wrapper" style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-emerald)' }}>
+              <FileCheck2 size={20} />
+            </div>
+          </div>
+          <div className="stat-value">{stats.reportsReleasedToday || 156}</div>
+          <div className="stat-subtext">
+            <span style={{ color: 'var(--accent-emerald)' }}>100% delivered</span> via FHIR/PDF
           </div>
         </div>
       </div>
 
       {/* Order Status Pipeline Info */}
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1.5rem', marginBottom: '2rem', boxShadow: 'var(--shadow-card)' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-main)' }}>
-          LabConnect Order Lifecycle Pipeline
-        </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem', textAlign: 'center' }}>
+      <div className="pipeline-section">
+        <div className="section-header">
+          <h3>LabConnect Order Lifecycle Pipeline</h3>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Automated Stage Progression</span>
+        </div>
+        <div className="pipeline-grid">
           {(stats.pipelineStages || []).map((stage, idx) => (
-            <div key={idx} style={{ background: stage.bg || '#f8fafc', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(0,0,0,0.05)' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: '800', color: stage.color || '#ea580c', marginBottom: '0.2rem' }}>{stage.label}</div>
-              <div style={{ fontSize: '0.725rem', color: 'var(--text-main)', fontWeight: '500' }}>{stage.desc}</div>
+            <div key={idx} className="pipeline-step">
+              <span className="step-badge" style={{ background: stage.bg || 'rgba(255,255,255,0.05)', color: stage.color || 'var(--accent-cyan)' }}>
+                {stage.label}
+              </span>
+              <div className="step-desc">{stage.desc}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Recent Orders Data Table */}
-      <div className="data-table-container">
-        <div className="table-header">
-          <h3>Recent Lab Orders Overview</h3>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
-              Filter Status
-            </button>
-          </div>
+      <div className="data-table-card">
+        <div className="section-header">
+          <h3>Recent Diagnostic Orders</h3>
+          <button className="btn-secondary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>
+            Filter Live Feed
+          </button>
         </div>
 
-        <table>
+        <table className="data-table">
           <thead>
             <tr>
               <th>Order ID</th>
               <th>Patient Name</th>
               <th>Ordered Tests</th>
-              <th>Date & Time</th>
-              <th>Order Status</th>
-              <th>Report Action</th>
+              <th>Timestamp</th>
+              <th>Status</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {recentOrders.map((row) => (
               <tr key={row.orderId}>
-                <td style={{ fontWeight: '700', color: 'var(--accent-red)' }}>{row.orderId}</td>
-                <td style={{ fontWeight: '600' }}>{row.patientName}</td>
-                <td>{row.tests}</td>
-                <td style={{ color: 'var(--text-muted)' }}>{row.date}</td>
+                <td style={{ fontFamily: 'var(--font-mono)', fontWeight: '700', color: 'var(--accent-cyan)' }}>{row.orderId}</td>
+                <td style={{ fontWeight: '600', color: '#ffffff' }}>{row.patientName}</td>
+                <td style={{ color: 'var(--text-muted)' }}>{row.tests}</td>
+                <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--text-light)' }}>{row.date}</td>
                 <td>
                   <span className={`badge ${getBadgeClass(row.status)}`}>{row.status}</span>
                 </td>
                 <td>
-                  <button className="btn btn-outline" style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}>
-                    View Details
+                  <button className="btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <span>Details</span>
+                    <ArrowUpRight size={12} />
                   </button>
                 </td>
               </tr>
