@@ -55,6 +55,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import DoctorPortal from "@/components/DoctorPortal";
+import LaboratoryPortal from "@/components/LaboratoryPortal";
 import { api, Doctor, HealthRecordItem, PatientUser } from "@/lib/api";
 
 type Stage = "gateway" | "resolving" | "dashboard";
@@ -348,6 +349,42 @@ export default function Home() {
           toast.info("Signed out from Doctor Space. Returned to Gateway.");
         }}
       />
+    );
+  }
+
+  // Direct Laboratory Portal View
+  if (portalChoice === "laboratory" && stage === "dashboard") {
+    return (
+      <main className="app-shell">
+        <aside className="app-rail">
+          <div className="brand-lockup">
+            <SignalLogo />
+            <span>Spectra<br />Health</span>
+          </div>
+          <div className="rail-caption">
+            <span className="vertical-rule" />
+            <p>Diagnostic Node<br />HL7 v2 / FHIR R4</p>
+          </div>
+          <div className="rail-footer"><span>03</span><span>2026</span></div>
+        </aside>
+        <div className="app-canvas">
+          <LaboratoryPortal
+            onSwitchToPatient={() => {
+              setPortalChoice("patient");
+              setStage("dashboard");
+            }}
+            onSwitchToDoctor={() => {
+              setPortalChoice("doctor");
+              setStage("dashboard");
+            }}
+            onSignOut={() => {
+              setStage("gateway");
+              setPortalChoice("patient");
+              toast.info("Signed out from Laboratory Space. Returned to Gateway.");
+            }}
+          />
+        </div>
+      </main>
     );
   }
 
@@ -788,7 +825,7 @@ export default function Home() {
                     className="signal-button bg-[var(--marigold)] hover:bg-[#b57600]"
                     onClick={() => {
                       toast.success("Diagnostic Laboratory Workspace Initialized");
-                      setPortalChoice("doctor");
+                      setPortalChoice("laboratory");
                       setStage("dashboard");
                     }}
                     type="button"
