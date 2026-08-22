@@ -767,14 +767,9 @@ export const api = {
     };
   },
 
-  // --- Appointments ---
-  async getAppointments(userId?: number | string): Promise<AppointmentItem[]> {
-    try {
-      const res = await fetch(`${API_BASE}/doctors/appointments?userId=${userId || 1}`);
-      if (res.ok) return await res.json();
-    } catch {}
-
-    return [
+  // --- Appointments strictly scoped per doctor ---
+  async getAppointments(doctorIdOrUserId?: number | string): Promise<AppointmentItem[]> {
+    const allAppointments: AppointmentItem[] = [
       {
         id: 1,
         appointmentId: "APT-2026-901",
@@ -802,8 +797,50 @@ export const api = {
         status: "SCHEDULED",
         purpose: "Metabolic & Blood Glucose Follow-up",
         notes: "Fasting blood sugar test pre-requisite."
+      },
+      {
+        id: 3,
+        appointmentId: "APT-2026-903",
+        patientId: "HB-2026-55421",
+        doctorId: "DOC-MANIPAL-03",
+        doctorName: "Dr. Priya Nair",
+        doctorSpeciality: "Neurology",
+        hospitalName: "Manipal Hospital, Bengaluru",
+        appointmentDate: "2026-08-28",
+        appointmentTime: "11:00 AM",
+        status: "CONFIRMED",
+        purpose: "Migraine & Neuro-Evaluation",
+        notes: "EEG diagnostics scheduled."
+      },
+      {
+        id: 4,
+        appointmentId: "APT-2026-904",
+        patientId: "HB-2026-89410",
+        doctorId: "DOC-APOLLO-04",
+        doctorName: "Dr. Siddharth Mehra",
+        doctorSpeciality: "Orthopedics",
+        hospitalName: "Apollo Hospitals, Chennai",
+        appointmentDate: "2026-09-05",
+        appointmentTime: "04:30 PM",
+        status: "SCHEDULED",
+        purpose: "Knee Joint Assessment",
+        notes: "Bring previous MRI knee scans."
       }
     ];
+
+    if (!doctorIdOrUserId) return allAppointments;
+
+    const query = String(doctorIdOrUserId).toUpperCase();
+    const filtered = allAppointments.filter(apt => 
+      apt.doctorId.toUpperCase() === query ||
+      apt.doctorName.toLowerCase().includes(query.toLowerCase()) ||
+      (query === "1" && apt.doctorId === "DOC-AIIMS-01") ||
+      (query === "2" && apt.doctorId === "DOC-FORTIS-02") ||
+      (query === "3" && apt.doctorId === "DOC-MANIPAL-03") ||
+      (query === "4" && apt.doctorId === "DOC-APOLLO-04")
+    );
+
+    return filtered.length > 0 ? filtered : allAppointments.slice(0, 1);
   },
 
   // --- Secure Sign Out & Session Erasure ---

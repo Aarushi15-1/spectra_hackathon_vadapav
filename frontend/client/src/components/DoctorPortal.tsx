@@ -148,7 +148,8 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({ onSwitchToPatient, o
   };
 
   const loadAppointments = async () => {
-    const list = await api.getAppointments(1);
+    const docId = selectedDoctor?.doctorId || initialDoctorId || 1;
+    const list = await api.getAppointments(docId);
     setAppointments(list);
   };
 
@@ -365,25 +366,24 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({ onSwitchToPatient, o
           </div>
         </div>
 
-        {/* Doctor Switcher & Role Navigation */}
+        {/* Authenticated Doctor Security Badge & Sign Out */}
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 bg-[var(--paper)] px-3 py-1.5 rounded-lg border border-[var(--line)]">
-            <span className="text-[11px] font-mono text-[var(--rose-soft)] uppercase font-semibold">Active Doctor:</span>
-            <select
-              className="bg-transparent text-xs font-bold text-[var(--rose)] outline-none cursor-pointer"
-              value={selectedDoctor?.id || ""}
-              onChange={(e) => {
-                const found = doctors.find((d) => d.id === Number(e.target.value));
-                if (found) setSelectedDoctor(found);
-              }}
-            >
-              {doctors.map((doc) => (
-                <option key={doc.id} value={doc.id}>
-                  {doc.fullName} ({doc.speciality} · {doc.hospitalName?.split(" ")[0]})
-                </option>
-              ))}
-            </select>
-          </div>
+          {selectedDoctor && (
+            <div className="flex items-center gap-2.5 bg-white px-3.5 py-1.5 rounded-xl border border-[var(--line)] shadow-2xs">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="text-left">
+                <div className="flex items-center gap-1.5">
+                  <strong className="text-xs text-[var(--rose)] font-bold">{selectedDoctor.fullName}</strong>
+                  <span className="bg-emerald-50 text-emerald-800 text-[9px] font-mono px-1.5 py-0.5 rounded border border-emerald-200 font-semibold">
+                    {selectedDoctor.doctorId}
+                  </span>
+                </div>
+                <span className="text-[10px] text-[var(--rose-soft)] block font-mono">
+                  {selectedDoctor.speciality} · {selectedDoctor.licenseNumber}
+                </span>
+              </div>
+            </div>
+          )}
 
           {onSignOut && (
             <button
