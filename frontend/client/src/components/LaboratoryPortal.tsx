@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { downloadDiagnosticReportPdf } from "@/lib/pdfGenerator";
 
 interface LaboratoryPortalProps {
   onSwitchToPatient?: () => void;
@@ -400,7 +401,17 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
                     </td>
                     <td className="p-3">
                       <button
-                        onClick={() => toast.success(`Generated PDF for ${o.orderId}`)}
+                        onClick={() => {
+                          toast.success(`Opening NABL Accredited PDF for ${o.orderId}...`);
+                          downloadDiagnosticReportPdf({
+                            reportId: `REP-${o.orderId.replace("ORD-", "")}`,
+                            orderId: o.orderId,
+                            patientName: o.patientName,
+                            patientId: o.patientId,
+                            testName: o.tests,
+                            conclusion: o.details,
+                          });
+                        }}
                         className="workspace-chip !py-1 !px-2.5 !text-[10px]"
                       >
                         <Download size={11} />

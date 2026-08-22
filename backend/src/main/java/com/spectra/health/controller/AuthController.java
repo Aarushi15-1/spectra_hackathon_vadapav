@@ -18,6 +18,25 @@ public class AuthController {
     private final JwtService jwtService;
 
     /**
+     * Unified Gateway OTP Initiation (ABHA / Aadhaar)
+     */
+    @PostMapping("/request-otp")
+    public ResponseEntity<AuthInitiateResponse> requestOtp(@RequestBody AuthInitiateRequest request) {
+        String method = request.getAuthMethod() != null ? request.getAuthMethod().name() : "abha";
+        AuthInitiateResponse res = authService.requestUnifiedOtp(request.getIdentifier(), method);
+        return ResponseEntity.ok(res);
+    }
+
+    /**
+     * Unified Gateway OTP Verification
+     */
+    @PostMapping("/verify-otp")
+    public ResponseEntity<AuthVerifyResponse> verifyOtp(@RequestBody AuthVerifyRequest request) {
+        AuthVerifyResponse res = authService.verifyUnifiedOtp(request.getTxnId(), request.getOtp());
+        return ResponseEntity.ok(res);
+    }
+
+    /**
      * Section 2.1: Step 1 of Signup - Aadhaar OTP Dispatch
      */
     @PostMapping("/signup/initiate-aadhaar")
