@@ -58,16 +58,10 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
     nablNumber: "NABL CERTIFIED · MC-2024-9182"
   }
 }) => {
-  const [activeTab, setActiveTab] = useState<"orders" | "work" | "tests" | "reports" | "hl7" | "appointments" | "network">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "work" | "tests" | "reports" | "appointments" | "network">("orders");
   const [loading, setLoading] = useState(false);
   const [fhirModalOpen, setFhirModalOpen] = useState(false);
   const [selectedOrderIndex, setSelectedOrderIndex] = useState(0);
-
-  // Sample HL7 message for interactive conversion
-  const [hl7Input, setHl7Input] = useState(`MSH|^~\\&|SPECTRA_LAB|DELHI_CENTRAL|HEALTHBRIDGE|MOHFW|20260822103000||ORU^R01|MSG-9820-001|P|2.5\nPID|1||PAT-1002^^^ABHA||Patel^Priya||19970514|F|||104 Connaught Place^Delhi^^110001||+919812345678\nOBR|1||ORD-9820|24323-8^Liver Function Panel^LN|||20260822084500|||||||||DOC-AIIMS-01^Mehta^Suresh^Dr\nOBX|1|NM|1975-2^Total Bilirubin^LN||0.8|mg/dL|0.2-1.2|N|||F\nOBX|2|NM|1742-6^SGPT (ALT)^LN||24|U/L|7-56|N|||F\nOBX|3|NM|1920-8^SGOT (AST)^LN||28|U/L|8-48|N|||F`);
-
-  const [fhirOutput, setFhirOutput] = useState<string>("");
-  const [isConvertingHl7, setIsConvertingHl7] = useState(false);
 
   const [orders, setOrders] = useState([
     {
@@ -180,58 +174,6 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
     { code: "THY006", name: "Thyroid Profile (T3, T4, TSH)", category: "Endocrinology", price: "₹600.00", parameters: 3, turnaround: "24 Hours" }
   ];
 
-  const handleConvertHl7 = async () => {
-    setIsConvertingHl7(true);
-    try {
-      const response = await fetch("/api/interop/hl7v2-to-fhir", {
-        method: "POST",
-        headers: { "Content-Type": "text/plain" },
-        body: hl7Input
-      });
-
-      if (response.ok) {
-        const json = await response.json();
-        setFhirOutput(JSON.stringify(json, null, 2));
-        toast.success("HL7 v2 Message converted to FHIR R4 Bundle!");
-      } else {
-        // Mock fallback conversion
-        const mockBundle = {
-          resourceType: "Bundle",
-          type: "transaction",
-          timestamp: new Date().toISOString(),
-          entry: [
-            {
-              resource: {
-                resourceType: "DiagnosticReport",
-                id: "DR-9820",
-                status: "final",
-                code: { text: "Liver Function Panel" },
-                subject: { reference: "Patient/PAT-1002", display: "Priya Patel" },
-                performer: [{ display: `${manager.facilityName} (${manager.labId})` }],
-                conclusion: "Normal physiological parameters verified by Lab Manager."
-              }
-            },
-            {
-              resource: {
-                resourceType: "Observation",
-                id: "OBS-01",
-                code: { text: "Total Bilirubin" },
-                valueQuantity: { value: 0.8, unit: "mg/dL" },
-                referenceRange: [{ low: { value: 0.2 }, high: { value: 1.2 } }]
-              }
-            }
-          ]
-        };
-        setFhirOutput(JSON.stringify(mockBundle, null, 2));
-        toast.success("HL7 converted via local FHIR R4 transformation engine");
-      }
-    } catch {
-      toast.info("HL7 parsed into FHIR R4 structure");
-    } finally {
-      setIsConvertingHl7(false);
-    }
-  };
-
   const handleSignReport = (orderId: string, patientName: string) => {
     const newActivity = {
       id: `ACT-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -320,7 +262,6 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
           { id: "work", label: `My Work & Activity Log (${managerActivities.length})`, icon: HistoryIcon },
           { id: "reports", label: "Pathologist Signoff Queue", icon: FileCheckIcon },
           { id: "tests", label: "Test Catalog & Panels", icon: FlaskIcon },
-          { id: "hl7", label: "HL7 v2 ➔ FHIR Converter", icon: FileCodeIcon },
           { id: "appointments", label: "Phlebotomy Logistics", icon: CalendarIcon },
           { id: "network", label: "Partner Lab Network", icon: BuildingIcon },
         ].map((tab) => {
@@ -650,49 +591,7 @@ export const LaboratoryPortal: React.FC<LaboratoryPortalProps> = ({
         </div>
       )}
 
-      {/* TAB 5: HL7 TO FHIR CONVERTER */}
-      {activeTab === "hl7" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="ticket-card !mb-0 space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="ticket-label">INCOMING LIMS FEED</span>
-              <span className="prototype-badge">HL7 v2.5 ORU^R01</span>
-            </div>
-            <p className="text-xs text-[var(--rose-soft)]">
-              Raw telemetry message received from diagnostic automated chemistry or hematology analyzer:
-            </p>
-            <textarea
-              value={hl7Input}
-              onChange={(e) => setHl7Input(e.target.value)}
-              rows={10}
-              className="w-full p-3 rounded-lg font-mono text-xs bg-[var(--paper)] text-[var(--rose)] border border-[var(--line)] outline-none"
-            />
-            <button
-              onClick={handleConvertHl7}
-              disabled={isConvertingHl7}
-              className="signal-button w-full justify-center"
-            >
-              <RefreshIcon size={14} className={isConvertingHl7 ? "spin" : ""} />
-              <span>Convert to FHIR R4 DiagnosticReport</span>
-            </button>
-          </div>
-
-          <div className="ticket-card !mb-0 space-y-3" style={{ boxShadow: "14px 16px 0 #f7d891" }}>
-            <div className="flex justify-between items-center">
-              <span className="ticket-label">FHIR R4 BUNDLE OUTPUT</span>
-              <span className="prototype-badge">ABDM Standard</span>
-            </div>
-            <p className="text-xs text-[var(--rose-soft)]">
-              Structured JSON bundle ready for ingestion into Patient Health Locker:
-            </p>
-            <pre className="p-3 rounded-lg font-mono text-[11px] bg-[var(--rose)] text-[#ffe6dc] max-h-[260px] overflow-auto">
-              {fhirOutput || "// Click Convert to generate FHIR R4 Bundle..."}
-            </pre>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 6: APPOINTMENTS */}
+      {/* TAB 5: APPOINTMENTS */}
       {activeTab === "appointments" && (
         <div className="ticket-card">
           <div className="flex justify-between items-center mb-4">
