@@ -27,14 +27,15 @@ import {
   User,
   Plus,
   Trash2,
-  Activity
+  Activity,
+  LogOut
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, Doctor, HealthRecordItem, AppointmentItem, PatientUser, PrescriptionItem } from "@/lib/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface DoctorPortalProps {
-  onSwitchToPatient: () => void;
+  onSwitchToPatient?: () => void;
   onSignOut?: () => void;
   initialDoctorId?: number;
 }
@@ -357,19 +358,12 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({ onSwitchToPatient, o
             </select>
           </div>
 
-          <button
-            onClick={onSwitchToPatient}
-            className="text-xs font-bold text-[var(--coral-deep)] hover:bg-[var(--blush)] px-3 py-2 rounded-lg border border-[var(--coral)] transition-colors flex items-center gap-1.5"
-          >
-            Switch to Patient View <ArrowRight size={14} />
-          </button>
-
           {onSignOut && (
             <button
               onClick={onSignOut}
-              className="text-xs font-bold text-[var(--rose-soft)] hover:bg-[var(--line)]/50 px-3 py-2 rounded-lg border border-[var(--line)] transition-colors flex items-center gap-1.5"
+              className="text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 px-3.5 py-2 rounded-xl border border-red-200 transition-colors flex items-center gap-1.5 shadow-2xs"
             >
-              <X size={14} /> Sign Out
+              <LogOut size={15} /> Doctor Sign Out
             </button>
           )}
         </div>

@@ -1,8 +1,8 @@
 /**
  * Spectra Health: Unified Care Signal Gateway & Patient Health Locker
  * Seamlessly connects Patient Health Locker, Doctor Clinical Portal, and Laboratory Space.
- * Features Medical License Verification, Doctor Unique ID generation, Ephemeral QR Token Generation & Expiry,
- * and synchronized live health records.
+ * Features Medical License Verification, Doctor Unique ID generation, Real Camera-Scannable Ephemeral QR (qrcode.react),
+ * Auto-Expiry Countdown, and clean Gateway Sign-Out flow.
  */
 import { useEffect, useRef, useState } from "react";
 import {
@@ -42,8 +42,10 @@ import {
   CheckCircle2,
   Share2,
   QrCode,
-  Timer
+  Timer,
+  LogOut
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -340,13 +342,10 @@ export default function Home() {
     return (
       <DoctorPortal
         initialDoctorId={selectedDoctorId}
-        onSwitchToPatient={() => {
-          setPortalChoice("patient");
-          setStage("dashboard");
-        }}
         onSignOut={() => {
           setStage("gateway");
           setPortalChoice("patient");
+          toast.info("Signed out from Doctor Space. Returned to Gateway.");
         }}
       />
     );
@@ -375,12 +374,10 @@ export default function Home() {
         patientUser={activePatientUser}
         navSection={navSection}
         setNavSection={setNavSection}
-        onSwitchToDoctor={() => {
-          setPortalChoice("doctor");
-        }}
         onSignOut={() => {
           setStage("gateway");
           setPortalChoice("patient");
+          toast.info("Logged out from Patient Health Locker. Returned to Gateway.");
         }}
         patientRecords={filteredRecords}
         allRecords={patientRecords}
@@ -880,7 +877,6 @@ function Dashboard({
   patientUser,
   navSection,
   setNavSection,
-  onSwitchToDoctor,
   onSignOut,
   patientRecords,
   allRecords,
@@ -900,7 +896,6 @@ function Dashboard({
   patientUser: PatientUser;
   navSection: NavSection;
   setNavSection: (section: NavSection) => void;
-  onSwitchToDoctor: () => void;
   onSignOut: () => void;
   patientRecords: HealthRecordItem[];
   allRecords: HealthRecordItem[];
@@ -921,7 +916,7 @@ function Dashboard({
   const [recordSearchQuery, setRecordSearchQuery] = useState("");
   const [selectedArchiveRecord, setSelectedArchiveRecord] = useState<HealthRecordItem | null>(null);
 
-  // Ephemeral Health QR Generator State with Auto-Expiry
+  // Real Ephemeral Health QR Generator State with Auto-Expiry
   const [qrToken, setQrToken] = useState<string>(() => {
     const code = Math.floor(1000 + Math.random() * 9000);
     const token = `QR-ABDM-${patient.fullName.toUpperCase().split(" ")[0]}-${code}`;
@@ -1074,7 +1069,10 @@ function Dashboard({
           </button>
         </nav>
         <div className="rail-bottom">
-          <button className="nav-item" type="button" onClick={onSignOut}><X size={19} /><span>Exit demo</span></button>
+          <button className="nav-item text-red-600 hover:bg-red-50" type="button" onClick={onSignOut}>
+            <LogOut size={19} />
+            <span>Log out</span>
+          </button>
           <p>FHIR R4<br />Live Sync</p>
         </div>
       </aside>
@@ -1083,7 +1081,7 @@ function Dashboard({
         <header className="app-header">
           <button className="mobile-menu" type="button" aria-label="Open navigation"><Menu size={21} /></button>
           <div className="page-heading">
-            <p>Tuesday, 22 August · ABDM Health Locker</p>
+            <p>Tuesday, 22 August · ABDM Patient Health Locker</p>
             <h1>Hello, {patient.fullName.split(" ")[0]}.</h1>
           </div>
           <div className="header-tools">
@@ -1094,10 +1092,10 @@ function Dashboard({
               <QrCode size={15} /> Show Ephemeral QR
             </button>
             <button
-              onClick={onSwitchToDoctor}
-              className="bg-white border border-[var(--coral)] hover:bg-[var(--blush)] text-[var(--coral-deep)] text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-2 shadow-xs transition-colors"
+              onClick={onSignOut}
+              className="bg-white border border-[var(--line)] hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-[var(--rose)] text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-2 shadow-xs transition-all"
             >
-              <Stethoscope size={15} /> Switch to Doctor Portal
+              <LogOut size={15} /> Log Out
             </button>
             <button className="icon-button" type="button" onClick={() => toast("You have 2 active consents linked to your ABHA") } aria-label="View notifications"><Bell size={19} /><i /></button>
             <button className="avatar-button" type="button" onClick={onSignOut}>
@@ -1130,7 +1128,7 @@ function Dashboard({
               <div className="hero-stamp"><span>CONSENT</span><strong>IN<br />MOTION</strong></div>
             </section>
 
-            {/* TOP ROW: DIGITAL ABHA CARD & LIVE EPHEMERAL QR GENERATOR */}
+            {/* TOP ROW: DIGITAL ABHA CARD & REAL EPHEMERAL QR GENERATOR */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Card 1: Digital ABHA Health Card */}
               <section className="id-artifact-section" aria-label="Digital ABHA health card">
@@ -1144,11 +1142,16 @@ function Dashboard({
                   </div>
                   <div className="card-back">
                     <span className="back-label">SHARE WITH PURPOSE</span>
-                    <div className="mini-qr" aria-label="Demo QR pattern">
-                      {Array.from({ length: 81 }, (_, index) => <i key={index} className={(index * 7 + index % 5) % 4 === 0 ? "filled" : ""} />)}
+                    <div className="bg-white p-2.5 rounded-xl border border-[var(--line)] shadow-2xs flex items-center justify-center my-2">
+                      <QRCodeSVG
+                        value={`https://spectra.health/patient/abha/${patient.abhaNumber}`}
+                        size={110}
+                        level="H"
+                        includeMargin={false}
+                      />
                     </div>
                     <p>Scoped sharing is available only after patient confirmation.</p>
-                    <code>spectra.demo/{patient.fullName.toLowerCase().split(" ")[0]}</code>
+                    <code>spectra.health/{patient.fullName.toLowerCase().split(" ")[0]}</code>
                   </div>
                 </div>
                 <div className="artifact-actions">
@@ -1157,7 +1160,7 @@ function Dashboard({
                 </div>
               </section>
 
-              {/* Card 2: Ephemeral QR Generator with Dynamic Expiry */}
+              {/* Card 2: Real Camera-Scannable Ephemeral QR Generator with Dynamic Expiry */}
               <section className="bg-[var(--cream)] border border-[var(--line)] rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4">
                 <div className="flex items-start justify-between">
                   <div>
@@ -1168,7 +1171,7 @@ function Dashboard({
                       Doctor Encounter Scan QR
                     </h3>
                     <p className="text-xs text-[var(--rose-soft)] mt-0.5">
-                      Present this dynamic QR to your doctor. Generated afresh on demand and auto-expires.
+                      Doctor can scan this real dynamic QR with any optical scanner or camera to unlock your care signal.
                     </p>
                   </div>
 
@@ -1185,36 +1188,21 @@ function Dashboard({
                   </div>
                 </div>
 
-                {/* QR Display Frame */}
+                {/* Real QR Display Frame */}
                 <div className="flex flex-col sm:flex-row items-center gap-5 bg-white p-4 rounded-xl border border-[var(--line)] relative overflow-hidden">
-                  {/* Visual QR Code Representation */}
-                  <div className={`relative p-3 bg-white border border-[var(--line)] rounded-xl shadow-2xs ${isQrExpired ? "opacity-30 blur-[1px]" : ""}`}>
-                    <div className="w-28 h-28 grid grid-cols-9 gap-1 bg-[#1a0f12] p-1.5 rounded-lg">
-                      {Array.from({ length: 81 }, (_, i) => {
-                        const isCorner =
-                          (i < 27 && (i % 9 < 3 || i % 9 > 5)) ||
-                          (i > 53 && i % 9 < 3);
-                        const isCenter = i === 40;
-                        const isFilled = isCorner || isCenter || (i * 13 + (i % 7)) % 3 === 0;
-                        return (
-                          <span
-                            key={i}
-                            className={`rounded-xs ${
-                              isCorner
-                                ? "bg-[var(--coral)]"
-                                : isFilled
-                                ? "bg-white"
-                                : "bg-transparent"
-                            }`}
-                          />
-                        );
-                      })}
-                    </div>
+                  {/* Real Camera-Scannable SVG QR Code */}
+                  <div className={`relative p-2.5 bg-white border-2 border-[var(--coral)] rounded-xl shadow-2xs flex items-center justify-center flex-shrink-0 ${isQrExpired ? "opacity-25 blur-[1px]" : ""}`}>
+                    <QRCodeSVG
+                      value={qrToken}
+                      size={116}
+                      level="H"
+                      includeMargin={false}
+                    />
                   </div>
 
                   {/* Expired Overlay */}
                   {isQrExpired && (
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center text-white p-4 text-center">
+                    <div className="absolute inset-0 bg-black/65 backdrop-blur-xs flex flex-col items-center justify-center text-white p-4 text-center">
                       <Lock size={24} className="text-red-400 mb-1" />
                       <strong className="text-sm font-bold">QR Token Expired</strong>
                       <p className="text-[11px] text-zinc-300 mt-0.5">Please generate a new QR to share with doctor.</p>
@@ -1267,7 +1255,7 @@ function Dashboard({
                 </div>
 
                 <div className="flex items-center justify-between text-[11px] text-[var(--rose-soft)] pt-1">
-                  <span>🔒 Dynamic cryptographic token refreshed on request</span>
+                  <span>🔒 Real high-density QR code verified for camera capture</span>
                   <button
                     onClick={() => setQrModalOpen(true)}
                     className="text-[var(--coral-deep)] font-bold hover:underline"
@@ -1832,7 +1820,7 @@ function Dashboard({
         )}
       </section>
 
-      {/* Ephemeral QR Modal for Fullscreen Scan */}
+      {/* Real Fullscreen Ephemeral QR Modal */}
       <Dialog open={qrModalOpen} onOpenChange={setQrModalOpen}>
         <DialogContent className="max-w-md bg-[var(--cream)] border border-[var(--line)] text-[var(--rose)] p-6">
           <DialogHeader>
@@ -1841,33 +1829,18 @@ function Dashboard({
               Scan Patient Care Signal
             </DialogTitle>
             <DialogDescription className="text-xs text-[var(--rose-soft)]">
-              Doctor can scan this dynamic QR code to securely link records and author encounters.
+              Doctor can scan this dynamic QR code with any optical camera scanner to securely link records and author encounters.
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col items-center justify-center py-4 space-y-4">
-            <div className={`p-5 bg-white border-2 border-[var(--coral)] rounded-2xl shadow-md relative ${isQrExpired ? "opacity-30 blur-xs" : ""}`}>
-              <div className="w-52 h-52 grid grid-cols-9 gap-1.5 bg-[#1a0f12] p-2.5 rounded-xl">
-                {Array.from({ length: 81 }, (_, i) => {
-                  const isCorner =
-                    (i < 27 && (i % 9 < 3 || i % 9 > 5)) ||
-                    (i > 53 && i % 9 < 3);
-                  const isCenter = i === 40;
-                  const isFilled = isCorner || isCenter || (i * 11 + (i % 5)) % 3 === 0;
-                  return (
-                    <span
-                      key={i}
-                      className={`rounded-xs ${
-                        isCorner
-                          ? "bg-[var(--coral)]"
-                          : isFilled
-                          ? "bg-white"
-                          : "bg-transparent"
-                      }`}
-                    />
-                  );
-                })}
-              </div>
+            <div className={`p-4 bg-white border-2 border-[var(--coral)] rounded-2xl shadow-md relative flex items-center justify-center ${isQrExpired ? "opacity-30 blur-xs" : ""}`}>
+              <QRCodeSVG
+                value={qrToken}
+                size={210}
+                level="H"
+                includeMargin={true}
+              />
             </div>
 
             {/* Countdown Badge */}
