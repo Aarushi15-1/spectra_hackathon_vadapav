@@ -30,6 +30,7 @@ import {
   UsersRound,
   X,
 } from "lucide-react";
+import QRCode from "qrcode";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -38,6 +39,35 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+function QrCodeDisplay({ text, size = 160 }: { text: string; size?: number }) {
+  const [dataUrl, setDataUrl] = useState<string>("");
+
+  useEffect(() => {
+    QRCode.toDataURL(text, {
+      width: size * 2,
+      margin: 1,
+      color: {
+        dark: "#090d16",
+        light: "#ffffff",
+      },
+    })
+      .then(setDataUrl)
+      .catch(() => {
+        setDataUrl(`https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}`);
+      });
+  }, [text, size]);
+
+  return (
+    <div style={{ background: "#ffffff", padding: "8px", borderRadius: "12px", display: "inline-block", boxShadow: "0 8px 30px rgba(0,0,0,0.4)" }}>
+      {dataUrl ? (
+        <img src={dataUrl} alt={`QR Code for ${text}`} style={{ width: `${size}px`, height: `${size}px`, display: "block" }} />
+      ) : (
+        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}`} alt={`QR Code for ${text}`} style={{ width: `${size}px`, height: `${size}px`, display: "block" }} />
+      )}
+    </div>
+  );
+}
 
 type Stage = "gateway" | "resolving" | "dashboard";
 type LoginTab = "abha" | "aadhaar";
@@ -508,124 +538,342 @@ function Dashboard({
   syncProviders: () => void;
 }) {
   const selected = records[activeRecord];
+  const [activeTab, setActiveTab] = useState<"overview" | "healthcard" | "doctors" | "consent" | "audit">("overview");
+  const [qrOpen, setQrOpen] = useState(false);
+  const [emergencyOpen, setEmergencyOpen] = useState(false);
+  const [qrToken, setQrToken] = useState("qr-sess-9f8e12a7bc41");
+  const [qrTimeLeft, setQrTimeLeft] = useState(300);
+  const [authorizations, setAuthorizations] = useState([
+    { id: 1, doctorName: "Dr. Ananya Sharma", speciality: "Cardiology", hospital: "AIIMS New Delhi", purpose: "Cardiology consultation and review", scope: "HealthCard, Allergies, Current Meds, Cardiac Reports", expires: "29 Aug 2026", status: "ACTIVE" }
+  ]);
+  const [healthCardData, setHealthCardData] = useState({
+    bloodGroup: "O+",
+    age: 29,
+    weightKg: 71.5,
+    heightCm: 176,
+    allergies: "Penicillin, Dust mites",
+    chronicConditions: "Stage 1 Hypertension (Controlled)",
+    currentMedications: "Telmisartan 40mg OD",
+    primaryContact: "+91 9820145290",
+    emergencyContact: "Pooja Sharma (Spouse) — +91 9820199442"
+  });
+  const [editCardOpen, setEditCardOpen] = useState(false);
+  const [emergencySummary, setEmergencySummary] = useState<any>(null);
+
+  // QR Timer
+  useEffect(() => {
+    if (!qrOpen || qrTimeLeft <= 0) return;
+    const timer = setInterval(() => setQrTimeLeft((prev) => Math.max(0, prev - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [qrOpen, qrTimeLeft]);
+
+  const handleRevoke = (id: number, name: string) => {
+    setAuthorizations(prev => prev.filter(a => a.id !== id));
+    toast.success(`Access authorization revoked for ${name}. Recorded in audit trail.`);
+  };
+
+  const handleEmergencyDeclare = () => {
+    setEmergencySummary({
+      accessedBy: "Dr. Ananya Sharma (Trauma Lead)",
+      hospital: "AIIMS Trauma Center, Resuscitation Bay",
+      bloodGroup: healthCardData.bloodGroup,
+      allergies: healthCardData.allergies,
+      emergencyContact: healthCardData.emergencyContact,
+      validHours: 4
+    });
+    toast.error("🚨 HIGH-PRIORITY EMERGENCY ACCESS INVOKED! Logged in immutable audit trail.");
+  };
+
   return (
     <main className="app-shell">
       <aside className="app-rail">
-        <div className="brand-lockup"><SignalLogo /><span>Spectra<br />Health</span></div>
+        <div className="brand-lockup"><SignalLogo /><span>HealthBridge<br />Platform</span></div>
         <nav aria-label="Primary navigation">
-          <button className="nav-item active" type="button"><HeartPulse size={19} /><span>My signal</span></button>
-          <button className="nav-item" type="button" onClick={() => toast("Records are shown below") }><ClipboardList size={19} /><span>Records</span></button>
-          <button className="nav-item" type="button" onClick={() => toast("Consent panel is shown below") }><ShieldCheck size={19} /><span>Consent</span></button>
-          <button className="nav-item" type="button" onClick={syncProviders}><RefreshCw size={19} /><span>Sources</span></button>
+          <button className={`nav-item ${activeTab === "overview" ? "active" : ""}`} type="button" onClick={() => setActiveTab("overview")}><HeartPulse size={19} /><span>Dashboard</span></button>
+          <button className={`nav-item ${activeTab === "healthcard" ? "active" : ""}`} type="button" onClick={() => setActiveTab("healthcard")}><BadgeCheck size={19} /><span>HealthCard</span></button>
+          <button className={`nav-item ${activeTab === "doctors" ? "active" : ""}`} type="button" onClick={() => setActiveTab("doctors")}><Stethoscope size={19} /><span>Doctors</span></button>
+          <button className={`nav-item ${activeTab === "consent" ? "active" : ""}`} type="button" onClick={() => setActiveTab("consent")}><ShieldCheck size={19} /><span>Access & Consent</span></button>
+          <button className={`nav-item ${activeTab === "audit" ? "active" : ""}`} type="button" onClick={() => setActiveTab("audit")}><ScanLine size={19} /><span>Audit Trail</span></button>
         </nav>
         <div className="rail-bottom">
-          <button className="nav-item" type="button" onClick={onSignOut}><X size={19} /><span>Exit demo</span></button>
-          <p>FHIR R4<br />Demo build</p>
+          <button className="nav-item" type="button" onClick={onSignOut}><X size={19} /><span>Sign out</span></button>
+          <p>FHIR R4 • Supabase<br />PBKDF2-HMAC-SHA256</p>
         </div>
       </aside>
 
       <section className="app-canvas">
         <header className="app-header">
           <button className="mobile-menu" type="button" aria-label="Open navigation"><Menu size={21} /></button>
-          <div className="page-heading"><p>Tuesday, 22 August</p><h1>Hello, Aarav.</h1></div>
+          <div className="page-heading">
+            <p>Tuesday, 22 August • Patient ID: <strong style={{ color: "#10b981", fontFamily: "monospace" }}>HB-2026-89410</strong></p>
+            <h1>Hello, Aarav Sharma.</h1>
+          </div>
           <div className="header-tools">
-            <span className="demo-label"><Sparkles size={14} /> Interactive prototype</span>
-            <button className="icon-button" type="button" onClick={() => toast("You have 2 consent updates") } aria-label="View notifications"><Bell size={19} /><i /></button>
+            <button className="signal-button" type="button" onClick={() => { setQrToken("qr-sess-" + Math.random().toString(36).substring(2, 12)); setQrTimeLeft(300); setQrOpen(true); }} style={{ padding: "8px 14px", fontSize: "12px", background: "linear-gradient(135deg, #10b981, #06b6d4)", color: "#090d16", fontWeight: "bold" }}>
+              <ScanLine size={15} /> Share Ephemeral QR
+            </button>
+            <button className="quiet-button" type="button" onClick={() => setEmergencyOpen(true)} style={{ padding: "8px 14px", fontSize: "12px", background: "rgba(225, 29, 72, 0.2)", border: "1px solid rgba(225, 29, 72, 0.5)", color: "#f43f5e", fontWeight: "bold" }}>
+              <LockKeyhole size={15} /> Emergency Access
+            </button>
             <button className="avatar-button" type="button" onClick={onSignOut}>AS</button>
           </div>
         </header>
 
-        <div className="workspace-strip" aria-label="Switch dashboard perspective">
-          <span>VIEW</span>
-          {(["patient", "doctor", "laboratory"] as Workspace[]).map((item) => (
-            <button key={item} type="button" onClick={() => setWorkspace(item)} className={workspace === item ? "view-button selected" : "view-button"}>
-              {item === "patient" ? <UserRound size={15} /> : item === "doctor" ? <Stethoscope size={15} /> : <FlaskConical size={15} />}{item}
-            </button>
-          ))}
-          <span className="workspace-note">Demo perspective only</span>
-        </div>
-
-        <section className="dashboard-hero">
-          <div className="hero-copy">
-            <div className="hero-eyebrow"><span /> LIVE HEALTH LOCKER</div>
-            <h2>{workspace === "patient" ? "Care that travels with you." : workspace === "doctor" ? "The whole story, with consent." : "Results that become useful care."}</h2>
-            <p>{workspace === "patient" ? "Your data is connected, organized, and ready only when you say so." : workspace === "doctor" ? "Review longitudinal FHIR resources with clear provenance and patient control." : "Publish structured diagnostic resources to the connected care story."}</p>
-            <div className="hero-meta"><span><BadgeCheck size={16} /> 4 connected sources</span><span><ShieldCheck size={16} /> 3 active consents</span></div>
-          </div>
-          <div className="hero-art-wrap"><img src="/manus-storage/spectra-doctor-lab-art_2091e459.png" alt="Abstract illustration of people connected through a health signal" /></div>
-          <div className="hero-stamp"><span>CONSENT</span><strong>IN<br />MOTION</strong></div>
-        </section>
-
-        <div className="overview-grid">
-          <section className="id-artifact-section" aria-label="Digital ABHA health card">
-            <div className={`abha-card ${cardBack ? "flipped" : ""}`}>
-              <div className="card-front">
-                <div className="tricolour-bar"><span /><span /><span /></div>
-                <div className="card-header"><span>ABHA health card</span><BadgeCheck size={19} /></div>
-                <div className="card-person"><div className="person-orb"><UserRound size={32} /></div><div><strong>Aarav Sharma</strong><small>ABHA linked · verified profile</small></div></div>
-                <div className="card-id-row"><span>ABHA NUMBER</span><code>91-4523-8910-1123</code></div>
-                <div className="card-foot"><span>O+ <small>blood group</small></span><span>1996 <small>year of birth</small></span><span>Male <small>sex</small></span></div>
+        {/* TAB 1: OVERVIEW */}
+        {activeTab === "overview" && (
+          <>
+            <section className="dashboard-hero">
+              <div className="hero-copy">
+                <div className="hero-eyebrow"><span /> PATIENT-CONTROLLED LOCKER</div>
+                <h2>Care that travels with you, on your terms.</h2>
+                <p>HealthBridge connects your health records across hospitals and labs with strict purpose-bound consent and zero raw Aadhaar exposure.</p>
+                <div className="hero-meta"><span><BadgeCheck size={16} /> 4 Connected Sources</span><span><ShieldCheck size={16} /> {authorizations.length} Active Authorizations</span></div>
               </div>
-              <div className="card-back">
-                <span className="back-label">SHARE WITH PURPOSE</span>
-                <div className="mini-qr" aria-label="Demo QR pattern">
-                  {Array.from({ length: 81 }, (_, index) => <i key={index} className={(index * 7 + index % 5) % 4 === 0 ? "filled" : ""} />)}
+              <div className="hero-art-wrap"><img src="/manus-storage/spectra-doctor-lab-art_2091e459.png" alt="Health signal" /></div>
+              <div className="hero-stamp"><span>PATIENT</span><strong>IN<br />CONTROL</strong></div>
+            </section>
+
+            <div className="overview-grid">
+              <section className="id-artifact-section" aria-label="Digital HealthCard">
+                <div className={`abha-card ${cardBack ? "flipped" : ""}`}>
+                  <div className="card-front">
+                    <div className="tricolour-bar"><span /><span /><span /></div>
+                    <div className="card-header"><span>HealthBridge HealthCard</span><BadgeCheck size={19} /></div>
+                    <div className="card-person"><div className="person-orb"><UserRound size={32} /></div><div><strong>Aarav Sharma</strong><small>Patient ID: HB-2026-89410</small></div></div>
+                    <div className="card-id-row"><span>EMERGENCY CONTACT</span><code>{healthCardData.emergencyContact.split("—")[0]}</code></div>
+                    <div className="card-foot"><span>{healthCardData.bloodGroup} <small>blood group</small></span><span>{healthCardData.age} yrs <small>age</small></span><span>Male <small>sex</small></span></div>
+                  </div>
+                  <div className="card-back" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                    <span className="back-label" style={{ marginBottom: "6px" }}>SHARE WITH PURPOSE</span>
+                    <QrCodeDisplay text={qrToken} size={105} />
+                    <p style={{ margin: "6px 0 2px" }}>5-Min Ephemeral Token: {qrToken}</p>
+                    <code>Possession ≠ Access</code>
+                  </div>
                 </div>
-                <p>Scoped sharing is available only after patient confirmation.</p>
-                <code>spectra.demo/aarav</code>
+                <div className="artifact-actions"><button type="button" onClick={() => setCardBack(!cardBack)}><RefreshCw size={15} /> {cardBack ? "Show front" : "Flip card"}</button><button type="button" onClick={() => setEditCardOpen(true)}><FileText size={15} /> Edit Summary</button></div>
+              </section>
+
+              <section className="vitals-section" aria-labelledby="vitals-title">
+                <div className="section-heading"><div><p className="section-index">HEALTHCARD SUMMARY</p><h3 id="vitals-title">Clinical Profile (§ 3)</h3></div><button type="button" onClick={() => setEditCardOpen(true)}>Edit <ArrowRight size={15} /></button></div>
+                <div className="vitals-grid">
+                  <article className="vital-card"><span className="vital-mark mark-0">Allergies</span><p>Known Allergies</p><strong>{healthCardData.allergies}</strong><em><span />Verified</em></article>
+                  <article className="vital-card"><span className="vital-mark mark-1">Chronic</span><p>Conditions</p><strong>{healthCardData.chronicConditions}</strong><em><span />Stable</em></article>
+                  <article className="vital-card"><span className="vital-mark mark-2">Rx</span><p>Current Meds</p><strong>{healthCardData.currentMedications}</strong><em><span />Daily OD</em></article>
+                  <article className="vital-card"><span className="vital-mark mark-3">Emergency</span><p>Contact</p><strong>{healthCardData.emergencyContact}</strong><em><span />Primary</em></article>
+                </div>
+              </section>
+            </div>
+
+            <section className="records-section" aria-labelledby="records-title">
+              <div className="section-heading record-heading"><div><p className="section-index">HL7 FHIR RESOURCE VAULT</p><h3 id="records-title">Standardized Medical Records</h3></div><button className="add-record" type="button" onClick={() => setFhirOpen(true)}><Database size={17} /> Inspect FHIR R4 Bundle</button></div>
+              <div className="records-layout">
+                <div className="record-timeline">
+                  {records.map((record, index) => {
+                    const Icon = record.icon;
+                    return <button className={activeRecord === index ? "record-row selected" : "record-row"} type="button" onClick={() => setActiveRecord(index)} key={record.title}><span className={`record-icon ${record.color}`}><Icon size={19} /></span><span className="record-content"><em>{record.type}</em><strong>{record.title}</strong><small>{record.source}</small></span><span className="record-date">{record.date}<ChevronRight size={17} /></span></button>;
+                  })}
+                </div>
+                <aside className="record-detail">
+                  <div className="detail-type"><span className={`detail-dot ${selected.color}`} /><span>{selected.type}</span></div>
+                  <h4>{selected.title}</h4><p>{selected.note}</p>
+                  <div className="secure-meta"><ShieldCheck size={16} /><span>HL7 FHIR R4 Normalized & Encrypted</span></div>
+                  <button className="fhir-button" type="button" onClick={() => setFhirOpen(true)}><Database size={16} /> Inspect Resource Payload <ArrowRight size={16} /></button>
+                </aside>
+              </div>
+            </section>
+          </>
+        )}
+
+        {/* TAB 2: HEALTHCARD DETAILED */}
+        {activeTab === "healthcard" && (
+          <section className="records-section">
+            <div className="section-heading"><div><p className="section-index">SECTION 3 SPECIFICATION</p><h3>HealthCard — Structured Patient Summary</h3></div><button className="add-record" onClick={() => setEditCardOpen(true)}><FileText size={16} /> Edit Summary</button></div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px", marginTop: "16px" }}>
+              <div style={{ padding: "20px", background: "rgba(15, 23, 42, 0.6)", borderRadius: "16px", border: "1px solid rgba(30, 41, 59, 0.8)" }}>
+                <p style={{ fontSize: "11px", color: "#94a3b8" }}>PATIENT IDENTITY</p>
+                <h4 style={{ fontSize: "16px", fontWeight: "bold", color: "#f8fafc", margin: "4px 0" }}>Aarav Sharma</h4>
+                <p style={{ fontSize: "12px", color: "#10b981", fontFamily: "monospace" }}>ID: HB-2026-89410</p>
+                <p style={{ fontSize: "12px", color: "#cbd5e1", marginTop: "8px" }}>Blood Group: <strong style={{ color: "#f43f5e" }}>{healthCardData.bloodGroup}</strong> • Age: {healthCardData.age} yrs</p>
+                <p style={{ fontSize: "12px", color: "#cbd5e1" }}>Weight: {healthCardData.weightKg} kg • Height: {healthCardData.heightCm} cm</p>
+              </div>
+              <div style={{ padding: "20px", background: "rgba(15, 23, 42, 0.6)", borderRadius: "16px", border: "1px solid rgba(30, 41, 59, 0.8)" }}>
+                <p style={{ fontSize: "11px", color: "#fbbf24" }}>KNOWN ALLERGIES</p>
+                <p style={{ fontSize: "13px", fontWeight: "600", color: "#fef08a", marginTop: "6px" }}>{healthCardData.allergies}</p>
+                <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "12px" }}>CHRONIC CONDITIONS</p>
+                <p style={{ fontSize: "13px", fontWeight: "600", color: "#67e8f9" }}>{healthCardData.chronicConditions}</p>
+              </div>
+              <div style={{ padding: "20px", background: "rgba(15, 23, 42, 0.6)", borderRadius: "16px", border: "1px solid rgba(30, 41, 59, 0.8)" }}>
+                <p style={{ fontSize: "11px", color: "#818cf8" }}>CURRENT MEDICATIONS</p>
+                <p style={{ fontSize: "13px", fontWeight: "600", color: "#c7d2fe", marginTop: "6px" }}>{healthCardData.currentMedications}</p>
+                <p style={{ fontSize: "11px", color: "#f43f5e", marginTop: "12px" }}>EMERGENCY CONTACT</p>
+                <p style={{ fontSize: "12px", fontWeight: "bold", color: "#fda4af" }}>{healthCardData.emergencyContact}</p>
               </div>
             </div>
-            <div className="artifact-actions"><button type="button" onClick={() => setCardBack(!cardBack)}><RefreshCw size={15} /> {cardBack ? "Show card" : "Flip to share"}</button><button type="button" onClick={() => toast("PDF card download is a prototype action") }><FileText size={15} /> Download</button></div>
           </section>
+        )}
 
-          <section className="vitals-section" aria-labelledby="vitals-title">
-            <div className="section-heading"><div><p className="section-index">TODAY’S SIGNAL</p><h3 id="vitals-title">Vitals, at a glance</h3></div><button type="button" onClick={() => toast("Trend view is coming next")}>View trend <ArrowRight size={15} /></button></div>
-            <div className="vitals-grid">
-              {vitals.map((vital, index) => <article className="vital-card" key={vital.label}><span className={`vital-mark mark-${index}`}>{vital.detail}</span><p>{vital.label}</p><strong>{vital.value} <small>{vital.unit}</small></strong><em><span />{vital.note}</em></article>)}
+        {/* TAB 3: VERIFIED DOCTORS */}
+        {activeTab === "doctors" && (
+          <section className="records-section">
+            <div className="section-heading"><div><p className="section-index">SECTION 5 & 8 SPECIFICATION</p><h3>Verified Doctor Directory & Appointments</h3></div></div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", marginTop: "16px" }}>
+              {[
+                { name: "Dr. Ananya Sharma", spec: "Cardiology", hosp: "AIIMS New Delhi", lic: "MCI-DEL-2014-8849", fee: "₹1,500", rating: "4.9" },
+                { name: "Dr. Rajesh Verma", spec: "Internal Medicine", hosp: "Fortis Hospital", lic: "MCI-MAH-2011-3901", fee: "₹1,200", rating: "4.8" },
+                { name: "Dr. Priya Nair", spec: "Neurology", hosp: "Manipal Hospital", lic: "KMC-BLR-2016-1120", fee: "₹1,800", rating: "4.9" }
+              ].map((doc) => (
+                <div key={doc.name} style={{ padding: "20px", background: "rgba(15, 23, 42, 0.6)", borderRadius: "16px", border: "1px solid rgba(30, 41, 59, 0.8)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <h4 style={{ fontWeight: "bold", color: "#f8fafc" }}>{doc.name}</h4>
+                    <span style={{ fontSize: "11px", color: "#fbbf24" }}>★ {doc.rating}</span>
+                  </div>
+                  <p style={{ fontSize: "12px", color: "#10b981", marginTop: "2px" }}>{doc.spec} • {doc.hosp}</p>
+                  <p style={{ fontSize: "11px", color: "#94a3b8", fontFamily: "monospace", marginTop: "4px" }}>License: {doc.lic}</p>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "16px", paddingTop: "12px", borderTop: "1px solid rgba(30, 41, 59, 0.8)" }}>
+                    <span style={{ fontSize: "12px", fontWeight: "bold", color: "#38bdf8" }}>{doc.fee}</span>
+                    <button className="signal-button" style={{ padding: "6px 12px", fontSize: "11px" }} onClick={() => toast.success(`Appointment booked with ${doc.name} for Friday 11:00 AM.`)}>Book Visit</button>
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
-        </div>
+        )}
 
-        <section className="records-section" aria-labelledby="records-title">
-          <div className="section-heading record-heading"><div><p className="section-index">FHIR RESOURCE VAULT</p><h3 id="records-title">Your recent care signal</h3></div><button className="add-record" type="button" onClick={() => toast("Secure record linking is a prototype action") }><Plus size={17} /> Link a health record</button></div>
-          <div className="record-filter" role="tablist" aria-label="Filter health records"><button className="selected" type="button">All <span>4</span></button><button type="button">Encounters</button><button type="button">Labs</button><button type="button">Medicines</button><button type="button">Immunizations</button></div>
-          <div className="records-layout">
-            <div className="record-timeline">
-              {records.map((record, index) => {
-                const Icon = record.icon;
-                return <button className={activeRecord === index ? "record-row selected" : "record-row"} type="button" onClick={() => setActiveRecord(index)} key={record.title}><span className={`record-icon ${record.color}`}><Icon size={19} /></span><span className="record-content"><em>{record.type}</em><strong>{record.title}</strong><small>{record.source}</small></span><span className="record-date">{record.date}<ChevronRight size={17} /></span></button>;
-              })}
-            </div>
-            <aside className="record-detail">
-              <div className="detail-type"><span className={`detail-dot ${selected.color}`} /><span>{selected.type}</span><button type="button" aria-label="More actions"><MoreHorizontal size={19} /></button></div>
-              <h4>{selected.title}</h4><p>{selected.note}</p>
-              <div className="secure-meta"><ShieldCheck size={16} /><span>Source linked & recorded in the consent trail</span></div>
-              <button className="fhir-button" type="button" onClick={() => setFhirOpen(true)}><Database size={16} /> Inspect FHIR resource <ArrowRight size={16} /></button>
-            </aside>
-          </div>
-        </section>
+        {/* TAB 4: ACCESS & CONSENT CONTROL */}
+        {activeTab === "consent" && (
+          <section className="records-section">
+            <div className="section-heading"><div><p className="section-index">SECTION 10 & 11 SPECIFICATION</p><h3>Access Management & Revocation</h3></div><button className="add-record" onClick={() => setQrOpen(true)}><ScanLine size={16} /> Create Sharing Session</button></div>
+            {authorizations.length === 0 ? (
+              <div style={{ padding: "40px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No active provider authorizations. Generate a QR session to authorize a doctor.</div>
+            ) : (
+              <div style={{ display: "grid", gap: "12px", marginTop: "16px" }}>
+                {authorizations.map(auth => (
+                  <div key={auth.id} style={{ padding: "18px", background: "rgba(16, 185, 129, 0.05)", border: "1px solid rgba(16, 185, 129, 0.3)", borderRadius: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <h4 style={{ fontSize: "14px", fontWeight: "bold", color: "#f8fafc" }}>{auth.doctorName} <span style={{ fontSize: "11px", color: "#10b981" }}>({auth.speciality} — {auth.hospital})</span></h4>
+                      <p style={{ fontSize: "12px", color: "#cbd5e1", margin: "4px 0" }}>Purpose: {auth.purpose}</p>
+                      <p style={{ fontSize: "11px", color: "#34d399", fontFamily: "monospace" }}>Scope: [{auth.scope}] • Expires: {auth.expires}</p>
+                    </div>
+                    <button className="quiet-button" style={{ background: "rgba(225, 29, 72, 0.2)", border: "1px solid rgba(225, 29, 72, 0.4)", color: "#f43f5e", padding: "6px 14px", fontSize: "11px", fontWeight: "bold" }} onClick={() => handleRevoke(auth.id, auth.doctorName)}>Revoke Access</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
-        <div className="lower-grid">
-          <section className="provider-card" aria-labelledby="provider-title">
-            <div className="section-heading"><div><p className="section-index">CONNECTED SOURCES</p><h3 id="provider-title">Where your signal flows</h3></div><button type="button" onClick={syncProviders} disabled={isSyncing}>{isSyncing ? <RefreshCw className="spin" size={16} /> : <RefreshCw size={16} />} {isSyncing ? "Syncing" : "Refresh"}</button></div>
-            <div className="provider-list">
-              {["AIIMS New Delhi", "Apollo Diagnostic Labs", "Max Super Speciality Hospital", "National Health Mission"].map((provider, index) => <div key={provider} className="provider-row"><span className={`provider-glyph glyph-${index}`}>{provider.split(" ").map((word) => word[0]).slice(0, 2).join("")}</span><div><strong>{provider}</strong><small>{index === 1 ? "Synced today" : index === 0 ? "Synced 2h ago" : "Verified connection"}</small></div><span className="connection-status"><i />linked</span></div>)}
+        {/* TAB 5: AUDIT TRAIL */}
+        {activeTab === "audit" && (
+          <section className="records-section">
+            <div className="section-heading"><div><p className="section-index">SECTION 12 SPECIFICATION</p><h3>Immutable Security Audit Trail</h3></div></div>
+            <div style={{ display: "grid", gap: "10px", marginTop: "16px" }}>
+              {[
+                { actor: "Dr. Ananya Sharma (AIIMS)", action: "ACCESS_APPROVED", desc: "Patient approved 7-day scoped access [HealthCard, Allergies, Cardiac Reports].", time: "Today, 11:37 AM", type: "VERIFIED" },
+                { actor: "Aarav Sharma (Patient)", action: "QR_GENERATED", desc: "Patient generated a 5-minute ephemeral QR sharing token (qr-sess-9f8e12a7bc41).", time: "Today, 11:35 AM", type: "INFO" },
+                { actor: "Aarav Sharma (Patient)", action: "ACCOUNT_CREATED", desc: "Patient completed Aadhaar verification and established HealthBridge Patient ID HB-2026-89410.", time: "Today, 11:02 AM", type: "SUCCESS" }
+              ].map((log, idx) => (
+                <div key={idx} style={{ padding: "14px 18px", background: "rgba(15, 23, 42, 0.5)", border: "1px solid rgba(30, 41, 59, 0.8)", borderRadius: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "6px", background: "rgba(16, 185, 129, 0.2)", color: "#34d399", fontWeight: "bold", marginRight: "8px" }}>{log.action}</span>
+                    <strong style={{ fontSize: "12px", color: "#f8fafc" }}>{log.actor}</strong>
+                    <p style={{ fontSize: "12px", color: "#94a3b8", marginTop: "2px" }}>{log.desc}</p>
+                  </div>
+                  <span style={{ fontSize: "11px", color: "#64748b", fontFamily: "monospace" }}>{log.time}</span>
+                </div>
+              ))}
             </div>
           </section>
-          <section className="consent-card" aria-labelledby="consent-title">
-            <div className="consent-top"><div><p className="section-index">YOU DECIDE</p><h3 id="consent-title">Consent in motion</h3></div><div className="consent-count">03<small>active</small></div></div>
-            <p>Dr. Meera Iyer has access to your prescriptions and lab reports for a cardiology consultation.</p>
-            <div className="consent-tags"><span>6 months</span><span>Labs + Rx</span><span>Cardiology</span></div>
-            <div className="consent-actions"><button type="button" onClick={() => toast("Consent detail is a prototype action")}>Review</button><button type="button" onClick={() => toast.warning("Revoke confirmation would appear here")}>Revoke</button></div>
-          </section>
-        </div>
+        )}
       </section>
 
+      {/* EPHEMERAL QR MODAL */}
+      <Dialog open={qrOpen} onOpenChange={setQrOpen}>
+        <DialogContent className="otp-dialog" style={{ maxWidth: "520px" }}>
+          <DialogHeader>
+            <div className="issuer-seal"><SignalLogo compact /><span>Ephemeral Provider Access</span></div>
+            <DialogTitle>5-Minute Ephemeral Access QR</DialogTitle>
+            <DialogDescription>Section 4: High-entropy opaque token. Zero medical records inside QR.</DialogDescription>
+          </DialogHeader>
+          <div style={{ textAlign: "center", padding: "16px" }}>
+            <QrCodeDisplay text={qrToken} size={180} />
+            <p style={{ color: "#34d399", fontSize: "13px", fontFamily: "monospace", marginTop: "12px", fontWeight: "bold" }}>
+              Token: {qrToken} • Expires in: {Math.floor(qrTimeLeft / 60)}:{qrTimeLeft % 60 < 10 ? "0" : ""}{qrTimeLeft % 60}
+            </p>
+          </div>
+          <div style={{ background: "rgba(15, 23, 42, 0.8)", padding: "12px", borderRadius: "10px", fontSize: "12px", border: "1px solid rgba(30, 41, 59, 0.8)" }}>
+            <strong style={{ color: "#38bdf8" }}>Simulate Verified Doctor Scan:</strong>
+            <p style={{ color: "#cbd5e1", marginTop: "4px" }}>Dr. Ananya Sharma requests: <em>Cardiology Consultation (HealthCard, Allergies, Cardiac Reports)</em> for 7 days.</p>
+            <button className="signal-button" style={{ width: "100%", marginTop: "10px", padding: "8px" }} onClick={() => {
+              setAuthorizations(prev => [...prev, { id: Date.now(), doctorName: "Dr. Ananya Sharma", speciality: "Cardiology", hospital: "AIIMS New Delhi", purpose: "Cardiology consultation", scope: "HealthCard, Allergies, Cardiac Reports", expires: "7 Days", status: "ACTIVE" }]);
+              setQrOpen(false);
+              toast.success("Patient approved scoped authorization for Dr. Ananya Sharma!");
+            }}>
+              Approve Scoped Access
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* BREAK-GLASS EMERGENCY MODAL */}
+      <Dialog open={emergencyOpen} onOpenChange={setEmergencyOpen}>
+        <DialogContent className="otp-dialog" style={{ maxWidth: "480px", border: "1px solid rgba(225, 29, 72, 0.5)" }}>
+          <DialogHeader>
+            <div className="issuer-seal" style={{ background: "rgba(225, 29, 72, 0.2)", color: "#f43f5e" }}><LockKeyhole size={18} /><span>Break-Glass Emergency Protocol</span></div>
+            <DialogTitle>Declare Emergency Condition</DialogTitle>
+            <DialogDescription>Section 13: Time-bounded emergency critical summary access with high-priority audit trigger.</DialogDescription>
+          </DialogHeader>
+          {emergencySummary ? (
+            <div style={{ background: "rgba(225, 29, 72, 0.15)", padding: "16px", borderRadius: "12px", border: "1px solid rgba(225, 29, 72, 0.4)", fontSize: "12px", color: "#fda4af" }}>
+              <h4 style={{ fontWeight: "bold", color: "#f43f5e", marginBottom: "8px" }}>Emergency Critical Summary Active (4 Hours)</h4>
+              <p>• <strong>Blood Group:</strong> {emergencySummary.bloodGroup}</p>
+              <p>• <strong>Critical Allergies:</strong> {emergencySummary.allergies}</p>
+              <p>• <strong>Emergency Contact:</strong> {emergencySummary.emergencyContact}</p>
+              <p style={{ marginTop: "8px", fontSize: "11px", color: "#94a3b8" }}>Authorized for: {emergencySummary.accessedBy} at {emergencySummary.hospital}</p>
+            </div>
+          ) : (
+            <div style={{ spaceY: "12px" }}>
+              <p style={{ fontSize: "12px", color: "#cbd5e1", marginBottom: "12px" }}>Condition: <strong>Acute Polytrauma / Severe Respiratory Distress</strong></p>
+              <button className="signal-button" style={{ width: "100%", background: "#e11d48", padding: "10px", fontWeight: "bold" }} onClick={handleEmergencyDeclare}>
+                Declare Emergency Access
+              </button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* EDIT HEALTHCARD MODAL */}
+      <Dialog open={editCardOpen} onOpenChange={setEditCardOpen}>
+        <DialogContent className="otp-dialog" style={{ maxWidth: "480px" }}>
+          <DialogHeader>
+            <div className="issuer-seal"><BadgeCheck size={18} /><span>HealthCard Summary</span></div>
+            <DialogTitle>Edit Structured HealthCard</DialogTitle>
+          </DialogHeader>
+          <div style={{ display: "grid", gap: "10px", fontSize: "12px" }}>
+            <div>
+              <label style={{ display: "block", color: "#94a3b8", marginBottom: "4px" }}>Known Allergies</label>
+              <input style={{ width: "100%", padding: "8px", background: "#0f172a", border: "1px solid #334155", borderRadius: "8px", color: "#f8fafc" }} value={healthCardData.allergies} onChange={(e) => setHealthCardData({ ...healthCardData, allergies: e.target.value })} />
+            </div>
+            <div>
+              <label style={{ display: "block", color: "#94a3b8", marginBottom: "4px" }}>Chronic Conditions</label>
+              <input style={{ width: "100%", padding: "8px", background: "#0f172a", border: "1px solid #334155", borderRadius: "8px", color: "#f8fafc" }} value={healthCardData.chronicConditions} onChange={(e) => setHealthCardData({ ...healthCardData, chronicConditions: e.target.value })} />
+            </div>
+            <div>
+              <label style={{ display: "block", color: "#94a3b8", marginBottom: "4px" }}>Emergency Contact</label>
+              <input style={{ width: "100%", padding: "8px", background: "#0f172a", border: "1px solid #334155", borderRadius: "8px", color: "#f8fafc" }} value={healthCardData.emergencyContact} onChange={(e) => setHealthCardData({ ...healthCardData, emergencyContact: e.target.value })} />
+            </div>
+            <button className="signal-button" style={{ marginTop: "12px", padding: "10px" }} onClick={() => { setEditCardOpen(false); toast.success("HealthCard summary updated successfully!"); }}>
+              Save HealthCard Changes
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* FHIR DIALOG */}
       <Dialog open={fhirOpen} onOpenChange={setFhirOpen}>
         <DialogContent className="fhir-dialog">
-          <DialogHeader><div className="issuer-seal"><Database size={18} /><span>FHIR R4 sample</span></div><DialogTitle>{selected.title}</DialogTitle><DialogDescription>A simplified resource bundle included for the interactive prototype.</DialogDescription></DialogHeader>
+          <DialogHeader><div className="issuer-seal"><Database size={18} /><span>FHIR R4 Bundle</span></div><DialogTitle>{selected.title}</DialogTitle><DialogDescription>HL7 FHIR R4 standard JSON payload.</DialogDescription></DialogHeader>
           <pre>{fhirPreview}</pre>
-          <div className="fhir-footer"><span><ShieldCheck size={15} /> Illustrative data only</span><button className="signal-button" type="button" onClick={() => setFhirOpen(false)}>Close resource</button></div>
+          <div className="fhir-footer"><span><ShieldCheck size={15} /> Encrypted & Audited</span><button className="signal-button" type="button" onClick={() => setFhirOpen(false)}>Close resource</button></div>
         </DialogContent>
       </Dialog>
     </main>

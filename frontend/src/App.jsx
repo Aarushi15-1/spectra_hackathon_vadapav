@@ -147,7 +147,6 @@ export default function App() {
             { id: 'doctors', label: 'Verified Doctors & Appointments', icon: UserCheck },
             { id: 'access', label: 'Access & Consent Control', icon: ShieldCheck },
             { id: 'audit', label: 'Audit Trail', icon: History },
-            { id: 'hl7', label: 'HL7 V2 Sandbox', icon: Layers },
           ].map((item) => {
             const Icon = item.icon;
             const active = activeTab === item.id;
@@ -193,10 +192,6 @@ export default function App() {
 
         {activeTab === 'audit' && (
           <AuditTrail user={user} />
-        )}
-
-        {activeTab === 'hl7' && (
-          <Hl7TransformSandbox />
         )}
       </main>
 
