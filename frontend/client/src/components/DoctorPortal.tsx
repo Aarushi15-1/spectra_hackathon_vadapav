@@ -34,6 +34,7 @@ import {
 import { toast } from "sonner";
 import { api, Doctor, HealthRecordItem, AppointmentItem, PatientUser, PrescriptionItem } from "@/lib/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { LiveQrScanner } from "./LiveQrScanner";
 
 interface DoctorPortalProps {
   onSwitchToPatient?: () => void;
@@ -153,14 +154,18 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({ onSwitchToPatient, o
     setAppointments(list);
   };
 
-  const handleScanPatient = async () => {
-    if (!qrToken.trim()) {
+  const handleScanPatient = async (tokenOverride?: string) => {
+    const token = (tokenOverride || qrToken).trim();
+    if (!token) {
       toast.error("Please enter or scan a valid QR token.");
       return;
     }
+    if (tokenOverride) {
+      setQrToken(tokenOverride);
+    }
     setIsScanning(true);
     try {
-      const data = await api.doctorScanQr(qrToken, selectedDoctor?.id || 1);
+      const data = await api.doctorScanQr(token, selectedDoctor?.id || 1);
       setScannedPatient(data);
       
       // Auto match patient if exists
@@ -989,30 +994,30 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({ onSwitchToPatient, o
                   Patients present an ephemeral, cryptographic QR code from their Spectra health locker. Scan or enter the temporary session token below.
                 </p>
 
-                {/* Simulated Scanner Window */}
-                <div className="my-6 p-6 rounded-xl border-2 border-dashed border-[var(--coral)] bg-[#fff3ec] flex flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 rounded-full bg-[var(--coral)]/10 text-[var(--coral)] flex items-center justify-center mb-3 animate-pulse">
-                    <ScanLine size={32} />
-                  </div>
-                  <strong className="text-sm font-bold">Ready for Optical Camera Scan</strong>
-                  <p className="text-xs text-[var(--rose-soft)] mt-1 max-w-xs">
-                    Optical sensor active. Enter or use test session token below to simulate instant capture.
-                  </p>
+                {/* Real Live Optical Camera & Image QR Scanner */}
+                <div className="my-5">
+                  <LiveQrScanner
+                    onScan={(decodedCode) => handleScanPatient(decodedCode)}
+                    isScanning={isScanning}
+                  />
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 pt-4 border-t border-[var(--line)]">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold block">Patient Session QR Token</label>
+                    <label className="text-xs font-bold block text-[var(--rose)]">
+                      Or Manual / Copied QR Session Token:
+                    </label>
                     <button
                       type="button"
                       onClick={() => {
                         const active = localStorage.getItem("spectra_active_qr_token") || "QR-ABDM-AARAV-4891";
                         setQrToken(active);
-                        toast.info(`Active Patient QR loaded: ${active}`);
+                        handleScanPatient(active);
+                        toast.info(`Active Patient QR loaded & scanned: ${active}`);
                       }}
                       className="text-[11px] font-mono text-[var(--coral-deep)] font-bold hover:underline flex items-center gap-1"
                     >
-                      <Sparkles size={12} /> Auto-Fill Live Patient QR
+                      <Sparkles size={12} /> Auto-Fill & Verify Active QR
                     </button>
                   </div>
                   <div className="flex gap-2">
@@ -1025,12 +1030,12 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({ onSwitchToPatient, o
                     />
                     <button
                       type="button"
-                      onClick={handleScanPatient}
+                      onClick={() => handleScanPatient()}
                       disabled={isScanning}
                       className="bg-[var(--coral)] hover:bg-[var(--coral-deep)] text-white font-bold text-xs px-5 py-2.5 rounded-xl flex items-center gap-2 transition-transform active:scale-95 shadow-sm"
                     >
                       {isScanning ? <RefreshCw className="animate-spin" size={16} /> : <ScanLine size={16} />}
-                      Verify QR
+                      Verify Token
                     </button>
                   </div>
                 </div>
