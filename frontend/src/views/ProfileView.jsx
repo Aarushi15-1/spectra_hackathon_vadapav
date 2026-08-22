@@ -1,15 +1,14 @@
 import React from 'react';
-import { Shield, Mail, Phone, Server, CheckCircle2, XCircle } from 'lucide-react';
-import { getApiBaseUrl } from '../services/apiService';
+import { Shield, Mail, Phone, Building, Award, CheckCircle2, FileSignature, KeyRound } from 'lucide-react';
 
-const ProfileView = ({ backendHealth }) => {
+const ProfileView = () => {
   return (
     <div>
       <div className="section-heading" style={{ marginBottom: '22px' }}>
         <div>
           <p className="section-index">01 / SYSTEM OPERATOR</p>
           <h2 style={{ font: '700 28px Bricolage Grotesque, sans-serif', letterSpacing: '-.06em', color: 'var(--rose)', margin: '4px 0 0' }}>
-            Pathologist Station & Cloud Gateway Settings
+            Pathologist Station & Credentials
           </h2>
         </div>
       </div>
@@ -41,39 +40,49 @@ const ProfileView = ({ backendHealth }) => {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Shield size={15} color="var(--marigold)" />
-              <span style={{ color: 'var(--rose)' }}>NABL Accreditation: <strong>PATH-IND-88219</strong></span>
+              <span style={{ color: 'var(--rose)' }}>Medical License: <strong>MCI-88219</strong></span>
             </div>
           </div>
         </div>
 
-        {/* Cloud Config Ticket Card */}
+        {/* Clinical Facility & Accreditation Card */}
         <div className="ticket-card" style={{ marginBottom: 0, boxShadow: '14px 16px 0 #f7d891' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <Server size={18} color="var(--coral-deep)" />
+            <Award size={18} color="var(--coral-deep)" />
             <h3 style={{ font: '700 20px Bricolage Grotesque, sans-serif', letterSpacing: '-.04em', color: 'var(--rose)', margin: 0 }}>
-              Cloud Gateway Status
+              Facility & Accreditation
             </h3>
           </div>
 
-          <div style={{ display: 'grid', gap: '12px', fontSize: '12px' }}>
-            <div>
-              <span style={{ font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase' }}>REST Base URL</span>
-              <div style={{ background: 'var(--paper)', padding: '8px 12px', borderRadius: '5px', border: '1px solid var(--line)', font: '600 11px IBM Plex Mono, monospace', color: 'var(--coral-deep)', marginTop: '4px' }}>
-                {getApiBaseUrl()}
+          <div style={{ display: 'grid', gap: '12px', fontSize: '12px', color: 'var(--rose-soft)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Building size={15} color="var(--coral)" />
+              <div>
+                <span style={{ font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase', display: 'block' }}>Primary Hub</span>
+                <strong style={{ color: 'var(--rose)', fontSize: '13px' }}>HealthBridge Central Diagnostic Hub (Bandra)</strong>
               </div>
             </div>
 
-            <div>
-              <span style={{ font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase' }}>Health Telemetry Path</span>
-              <div style={{ background: 'var(--paper)', padding: '8px 12px', borderRadius: '5px', border: '1px solid var(--line)', font: '600 11px IBM Plex Mono, monospace', color: 'var(--rose)', marginTop: '4px' }}>
-                /api/health
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Shield size={15} color="var(--marigold)" />
+              <div>
+                <span style={{ font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase', display: 'block' }}>NABL Accreditation No.</span>
+                <strong style={{ color: 'var(--rose)', fontSize: '13px' }}>MC-2024-9182 (Valid till Dec 2028)</strong>
               </div>
             </div>
 
-            <div style={{ background: backendHealth?.connected ? '#ffd5c1' : '#fae9df', padding: '12px', borderRadius: '6px', border: '1px solid var(--line)', marginTop: '6px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', font: '700 11px IBM Plex Mono, monospace', color: backendHealth?.connected ? 'var(--coral-deep)' : 'var(--marigold)' }}>
-                {backendHealth?.connected ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
-                <span>{backendHealth?.connected ? 'Spring Boot Active Gateway' : 'Connecting to Core Backend...'}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FileSignature size={15} color="var(--coral)" />
+              <div>
+                <span style={{ font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase', display: 'block' }}>Digital DSC Certificate</span>
+                <strong style={{ color: 'var(--rose)', fontSize: '13px' }}>Class 3 FIPS-140-2 Level 3 (Active)</strong>
+              </div>
+            </div>
+
+            <div style={{ background: '#ffd5c1', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--line)', marginTop: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', font: '700 11px IBM Plex Mono, monospace', color: 'var(--coral-deep)' }}>
+                <CheckCircle2 size={15} />
+                <span>ABDM Certified Health Information Provider (HIP)</span>
               </div>
             </div>
           </div>
