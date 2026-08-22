@@ -146,7 +146,8 @@ export default function Home() {
     nablNumber: "NABL CERTIFIED · MC-2024-9182"
   });
 
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<PatientUser | null>(null);
+  const [matchedPatient, setMatchedPatient] = useState<PatientUser>(api.getPatients()[0]);
   const [txnId, setTxnId] = useState<string>("");
   const [maskedMobile, setMaskedMobile] = useState<string>("+91 ••••••4529");
   const [demoOtp, setDemoOtp] = useState<string>("123456");
@@ -171,8 +172,9 @@ export default function Home() {
     }
   };
 
-  const loadRecords = async () => {
-    const records = await api.getRecords(1);
+  const loadRecords = async (patientId?: string | number) => {
+    const targetId = patientId || currentUser?.patientId || 1;
+    const records = await api.getRecords(targetId);
     setPatientRecords(records);
   };
 
@@ -189,43 +191,25 @@ export default function Home() {
 
   const startOtp = async () => {
     const rawClean = identifier.replace(/\D/g, "");
-    if (rawClean.length < (loginTab === "abha" ? 14 : 12)) {
+    if (rawClean.length < 4) {
       toast.error(`Enter a valid ${loginTab === "abha" ? "14-digit ABHA" : "12-digit Aadhaar"} number.`);
       return;
     }
     
     try {
-      const res = await fetch("/api/auth/initiate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          authMethod: loginTab === "abha" ? "ABHA_NUMBER" : "AADHAAR",
-          identifier: identifier
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setTxnId(data.txnId);
-        setMaskedMobile(data.maskedMobile);
-        setDemoOtp(data.demoOtp || "123456");
-        setOtp(["", "", "", "", "", ""]);
-        setOtpOpen(true);
-        window.setTimeout(() => otpRefs.current[0]?.focus(), 120);
-        toast.success("Verification code dispatched via ABDM/UIDAI", {
-          description: `Simulated SMS OTP is ${data.demoOtp} (Sent to ${data.maskedMobile})`
-        });
-      } else {
-        throw new Error("Backend offline");
-      }
-    } catch (e) {
-      // Offline fallback
-      setTxnId(`TXN-${Date.now()}`);
-      setDemoOtp("123456");
+      const authSession = await api.initiatePatientAuth(identifier);
+      setTxnId(authSession.txnId);
+      setMaskedMobile(authSession.maskedMobile);
+      setDemoOtp(authSession.demoOtp);
+      setMatchedPatient(authSession.matchedPatient);
       setOtp(["", "", "", "", "", ""]);
       setOtpOpen(true);
       window.setTimeout(() => otpRefs.current[0]?.focus(), 120);
-      toast("Verification code simulated", { description: "ABDM code is 123456." });
+      toast.success("Verification code dispatched via ABDM/UIDAI", {
+        description: `Simulated SMS OTP is ${authSession.demoOtp} (Sent to ${authSession.maskedMobile})`
+      });
+    } catch (e: any) {
+      toast.error("Authentication Initiation Failed", { description: e.message || "Invalid identifier." });
     }
   };
 
@@ -238,43 +222,38 @@ export default function Home() {
 
     setIsVerifying(true);
     try {
-      const res = await fetch("/api/auth/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          txnId: txnId || `TXN-LOCAL`,
-          otp: code
-        })
-      });
-
-      if (res.ok) {
-        const result = await res.json();
-        setCurrentUser(result.user);
-        setUserKind(result.isNewUser ? "new" : "existing");
-        setOtpOpen(false);
-        setStage("resolving");
-        if (result.isNewUser) {
-          toast.success("New Patient Health Account Created!", { description: result.message });
-        } else {
-          toast.success(`Welcome back, ${result.user?.fullName}!`, { description: result.message });
-        }
-      } else {
-        throw new Error("Verification error");
-      }
-    } catch (e) {
-      // Fallback
+      const verifiedPatient = await api.verifyPatientOtp(txnId, code, matchedPatient);
+      setCurrentUser(verifiedPatient);
+      setUserKind("existing");
+      const records = await api.getRecords(verifiedPatient.patientId);
+      setPatientRecords(records);
       setOtpOpen(false);
       setStage("resolving");
+      toast.success(`Welcome back, ${verifiedPatient.fullName}!`, {
+        description: `ABDM Identity Verified · ABHA: ${verifiedPatient.abhaNumber} · Health Vault Decrypted`
+      });
+    } catch (e: any) {
+      toast.error("Verification error", { description: e.message || "Invalid OTP code." });
     } finally {
       setIsVerifying(false);
     }
   };
 
-  const fillDemo = (kind: "existing" | "new") => {
-    setUserKind(kind);
+  const fillDemo = (kind: "existing" | "new" | "rohan") => {
     setLoginTab("abha");
-    setIdentifier(kind === "existing" ? "91-4523-8910-1123" : "46-0198-7201-5566");
-    toast(kind === "existing" ? "Existing patient demo loaded" : "New patient generator loaded");
+    if (kind === "existing") {
+      setUserKind("existing");
+      setIdentifier("91-4523-8910-1123");
+      toast.info("Loaded Patient: Aarav Sharma (Cardiology Profile)");
+    } else if (kind === "new") {
+      setUserKind("new");
+      setIdentifier("46-0198-7201-5566");
+      toast.info("Loaded Patient: Meera Patel (Endocrinology & Diabetes Profile)");
+    } else {
+      setUserKind("existing");
+      setIdentifier("82-9011-3344-7711");
+      toast.info("Loaded Patient: Rohan Gupta (Pulmonology & Asthma Profile)");
+    }
   };
 
   const handleDoctorLogin = async () => {
@@ -358,6 +337,7 @@ export default function Home() {
       <DoctorPortal
         initialDoctorId={selectedDoctorId}
         onSignOut={() => {
+          api.signOut();
           setStage("gateway");
           setPortalChoice("patient");
           toast.info("Signed out from Doctor Space. Returned to Gateway.");
@@ -385,6 +365,7 @@ export default function Home() {
           <LaboratoryPortal
             manager={labManagerUser}
             onSignOut={() => {
+              api.signOut();
               setStage("gateway");
               setPortalChoice("patient");
               toast.info("Signed out from Laboratory Space. Returned to Gateway.");
@@ -419,9 +400,11 @@ export default function Home() {
         navSection={navSection}
         setNavSection={setNavSection}
         onSignOut={() => {
+          api.signOut();
+          setCurrentUser(null);
           setStage("gateway");
           setPortalChoice("patient");
-          toast.info("Logged out from Patient Health Locker. Returned to Gateway.");
+          toast.info("Cryptographic Session Wiped. Returned to Gateway.");
         }}
         patientRecords={filteredRecords}
         allRecords={patientRecords}
@@ -575,14 +558,49 @@ export default function Home() {
                   {loginTab === "abha" ? "ABDM pathway · your health data stays consent-controlled." : "Aadhaar is only used in this simulated verification journey; never enter a real ID here."}
                 </p>
 
-                <div className="ticket-actions">
-                  <button className="signal-button" onClick={startOtp} type="button">
-                    Send verification OTP <ArrowRight size={18} />
+                <div className="ticket-actions flex flex-col gap-3">
+                  <button className="signal-button w-full justify-center" onClick={startOtp} type="button">
+                    <ShieldCheck size={18} />
+                    <span>Send Verification OTP</span>
+                    <ArrowRight size={18} />
                   </button>
-                  <button className="quiet-button" onClick={() => fillDemo("existing")} type="button">Try existing patient (Aarav)</button>
-                  <button className="quiet-button" onClick={() => fillDemo("new")} type="button">Try new patient</button>
+
+                  <div className="pt-2 border-t border-[var(--line)] w-full">
+                    <span className="text-[10px] font-mono text-[var(--rose-soft)] uppercase font-bold tracking-widest block mb-2">
+                      TRY ISOLATED PATIENT PROFILES (AES-256 ENCRYPTED):
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => fillDemo("existing")}
+                        className="text-left p-2.5 rounded-xl border border-[var(--line)] bg-white hover:bg-[var(--paper)] transition-all text-xs"
+                      >
+                        <strong className="block text-[var(--rose)] font-bold">Aarav Sharma</strong>
+                        <span className="text-[10px] text-[var(--rose-soft)] block">Cardiology · O+</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fillDemo("new")}
+                        className="text-left p-2.5 rounded-xl border border-[var(--line)] bg-white hover:bg-[var(--paper)] transition-all text-xs"
+                      >
+                        <strong className="block text-[var(--rose)] font-bold">Meera Patel</strong>
+                        <span className="text-[10px] text-[var(--rose-soft)] block">Diabetes & Thyroid · B+</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fillDemo("rohan")}
+                        className="text-left p-2.5 rounded-xl border border-[var(--line)] bg-white hover:bg-[var(--paper)] transition-all text-xs"
+                      >
+                        <strong className="block text-[var(--rose)] font-bold">Rohan Gupta</strong>
+                        <span className="text-[10px] text-[var(--rose-soft)] block">Asthma · A+</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="privacy-strip"><ShieldCheck size={16} /><span>Demo only. This prototype does not perform e-KYC, store IDs, or provide medical advice.</span></div>
+                <div className="privacy-strip">
+                  <LockKeyhole size={16} className="text-emerald-600" />
+                  <span>AES-GCM 256-bit Web Crypto Active. Patient profiles and clinical records are cryptographically isolated.</span>
+                </div>
               </div>
             )}
 
