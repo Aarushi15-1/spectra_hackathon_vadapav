@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Download, CheckCircle, Clock, ShieldCheck, ArrowUpRight } from 'lucide-react';
+import { Download, ShieldCheck, FileCheck2, ArrowRight } from 'lucide-react';
 
 const mockReports = [
   { reportId: 'REP-7701', orderId: 'ORD-9819', patient: 'Amit Verma', test: 'HbA1c, Fasting Blood Sugar', pathologist: 'Dr. S. K. Mehta', status: 'VERIFIED', date: '2026-08-22 08:30 AM' },
@@ -9,48 +9,66 @@ const mockReports = [
 
 const LabReportsView = () => {
   return (
-    <div className="view-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="ticket-card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
-          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: '800', color: '#ffffff' }}>Diagnostic Reports</h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Review draft reports, perform digital pathologist verification, and sign FHIR DiagnosticReports</p>
+          <span style={{ color: 'var(--coral-deep)', font: '700 10px IBM Plex Mono, monospace', letterSpacing: '.1em', textTransform: 'uppercase' }}>
+            01 / PATHOLOGY SIGNOFF
+          </span>
+          <h2 style={{ font: '700 28px Bricolage Grotesque, sans-serif', letterSpacing: '-.06em', color: 'var(--rose)', margin: '4px 0 0' }}>
+            Diagnostic Reports & Digital Signatures
+          </h2>
+          <p style={{ color: 'var(--rose-soft)', fontSize: '13px', margin: '4px 0 0' }}>
+            Cryptographically signed laboratory reports converted into ABDM FHIR DiagnosticReports
+          </p>
         </div>
       </div>
 
-      <div className="data-table-card">
-        <div className="section-header">
-          <h3>Verified Reports Feed</h3>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>HL7 V2 / FHIR R4 Compliant</span>
-        </div>
-
-        <table className="data-table">
+      <div style={{ background: 'var(--paper)', borderRadius: '6px', border: '1px solid var(--line)', overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
           <thead>
-            <tr>
-              <th>Report ID</th>
-              <th>Order Ref</th>
-              <th>Patient Name</th>
-              <th>Diagnostic Panel</th>
-              <th>Verified Pathologist</th>
-              <th>Status</th>
-              <th>Actions</th>
+            <tr style={{ borderBottom: '1px solid var(--line)', background: '#fae9df' }}>
+              <th style={{ padding: '12px 16px', font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase' }}>Report ID</th>
+              <th style={{ padding: '12px 16px', font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase' }}>Order Ref</th>
+              <th style={{ padding: '12px 16px', font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase' }}>Patient Name</th>
+              <th style={{ padding: '12px 16px', font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase' }}>Diagnostic Panel</th>
+              <th style={{ padding: '12px 16px', font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase' }}>Verified Pathologist</th>
+              <th style={{ padding: '12px 16px', font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase' }}>Status</th>
+              <th style={{ padding: '12px 16px', font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase' }}>PDF Document</th>
             </tr>
           </thead>
           <tbody>
             {mockReports.map((report) => (
-              <tr key={report.reportId}>
-                <td style={{ fontFamily: 'var(--font-mono)', fontWeight: '700', color: 'var(--accent-cyan)' }}>{report.reportId}</td>
-                <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-light)', fontSize: '0.8rem' }}>{report.orderId}</td>
-                <td style={{ fontWeight: '600', color: '#ffffff' }}>{report.patient}</td>
-                <td style={{ color: 'var(--text-muted)' }}>{report.test}</td>
-                <td style={{ color: 'var(--text-light)' }}>{report.pathologist}</td>
-                <td>
-                  <span className={`badge ${report.status === 'VERIFIED' ? 'badge-success' : 'badge-warning'}`}>
+              <tr key={report.reportId} style={{ borderBottom: '1px solid rgba(231,185,166,0.4)' }}>
+                <td style={{ padding: '14px 16px', font: '700 11px IBM Plex Mono, monospace', color: 'var(--coral-deep)' }}>
+                  {report.reportId}
+                </td>
+                <td style={{ padding: '14px 16px', font: '600 11px IBM Plex Mono, monospace', color: 'var(--rose-soft)' }}>
+                  {report.orderId}
+                </td>
+                <td style={{ padding: '14px 16px', fontWeight: '700', color: 'var(--rose)' }}>
+                  {report.patient}
+                </td>
+                <td style={{ padding: '14px 16px', color: 'var(--rose-soft)' }}>
+                  {report.test}
+                </td>
+                <td style={{ padding: '14px 16px', color: 'var(--rose)' }}>
+                  {report.pathologist}
+                </td>
+                <td style={{ padding: '14px 16px' }}>
+                  <span style={{
+                    background: report.status === 'VERIFIED' ? '#ffd5c1' : '#fae9df',
+                    color: report.status === 'VERIFIED' ? 'var(--coral-deep)' : 'var(--marigold)',
+                    padding: '3px 8px',
+                    borderRadius: '999px',
+                    font: '700 10px IBM Plex Mono, monospace'
+                  }}>
                     {report.status}
                   </span>
                 </td>
-                <td>
-                  <button className="btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <Download size={12} />
+                <td style={{ padding: '14px 16px' }}>
+                  <button className="workspace-chip" style={{ padding: '4px 10px', fontSize: '10px' }}>
+                    <Download size={11} />
                     <span>Download PDF</span>
                   </button>
                 </td>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Filter, User, ArrowUpRight, Phone, Droplet, Calendar } from 'lucide-react';
+import { Search, Plus, Filter, User, ArrowRight, Phone, Droplet, Calendar, ShieldCheck } from 'lucide-react';
 import { fetchPatients } from '../services/apiService';
 
 const defaultPatients = [
@@ -30,22 +30,30 @@ const PatientsView = () => {
   );
 
   return (
-    <div className="view-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: '800', color: '#ffffff' }}>Patient Registry</h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Registered ABHA patient records and demographic profiles</p>
+    <div>
+      <div className="ticket-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div>
+            <span style={{ color: 'var(--coral-deep)', font: '700 10px IBM Plex Mono, monospace', letterSpacing: '.1em', textTransform: 'uppercase' }}>
+              01 / IDENTITY REGISTRY
+            </span>
+            <h2 style={{ font: '700 28px Bricolage Grotesque, sans-serif', letterSpacing: '-.06em', color: 'var(--rose)', margin: '4px 0 0' }}>
+              ABHA Verified Patient Directory
+            </h2>
+            <p style={{ color: 'var(--rose-soft)', fontSize: '13px', margin: '4px 0 0' }}>
+              Authenticated demographic records linked to National Health Authority repository
+            </p>
+          </div>
+          <button className="signal-button">
+            <Plus size={15} />
+            <span>Register ABHA Patient</span>
+          </button>
         </div>
-        <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Plus size={16} />
-          <span>Register Patient</span>
-        </button>
-      </div>
 
-      <div className="data-table-card">
-        <div className="section-header" style={{ marginBottom: '1.25rem' }}>
-          <div style={{ position: 'relative', width: '320px' }}>
-            <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+        {/* Search & Filter bar */}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '18px' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--rose-soft)' }} />
             <input
               type="text"
               placeholder="Search by patient name or ABHA ID..."
@@ -53,55 +61,71 @@ const PatientsView = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
                 width: '100%',
-                padding: '0.6rem 1rem 0.6rem 2.4rem',
-                borderRadius: 'var(--radius-pill)',
-                background: 'rgba(15, 23, 42, 0.8)',
-                border: '1px solid var(--border-color)',
-                color: 'var(--text-main)',
-                fontSize: '0.85rem',
-                outline: 'none'
+                padding: '10px 14px 10px 38px',
+                borderRadius: '6px',
+                background: 'var(--paper)',
+                border: '1px solid var(--line)',
+                color: 'var(--rose)',
+                fontSize: '12px',
+                outline: 'none',
+                fontFamily: 'Manrope, sans-serif'
               }}
             />
           </div>
-          <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
-            <Filter size={14} />
-            <span>Filter</span>
+          <button className="workspace-chip" style={{ padding: '9px 14px' }}>
+            <Filter size={13} />
+            <span>All Groups</span>
           </button>
         </div>
 
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Patient ID</th>
-              <th>Full Name</th>
-              <th>Demographics</th>
-              <th>Blood Group</th>
-              <th>Contact Phone</th>
-              <th>Orders</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredPatients.map((patient) => (
-              <tr key={patient.id}>
-                <td style={{ fontFamily: 'var(--font-mono)', fontWeight: '700', color: 'var(--accent-cyan)' }}>{patient.id}</td>
-                <td style={{ fontWeight: '600', color: '#ffffff' }}>{patient.name}</td>
-                <td style={{ color: 'var(--text-muted)' }}>{patient.age} yrs • {patient.gender}</td>
-                <td>
-                  <span className="badge badge-info">{patient.blood || patient.bloodGroup || 'O+'}</span>
-                </td>
-                <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-light)', fontSize: '0.8rem' }}>{patient.phone}</td>
-                <td style={{ fontWeight: '600' }}>{patient.ordersCount} test orders</td>
-                <td>
-                  <button className="btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                    <span>Profile</span>
-                    <ArrowUpRight size={12} />
-                  </button>
-                </td>
+        {/* Patient Table */}
+        <div style={{ background: 'var(--paper)', borderRadius: '6px', border: '1px solid var(--line)', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--line)', background: '#fae9df' }}>
+                <th style={{ padding: '12px 16px', font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase' }}>Patient ID</th>
+                <th style={{ padding: '12px 16px', font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase' }}>Full Name</th>
+                <th style={{ padding: '12px 16px', font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase' }}>Demographics</th>
+                <th style={{ padding: '12px 16px', font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase' }}>Blood Group</th>
+                <th style={{ padding: '12px 16px', font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase' }}>Phone</th>
+                <th style={{ padding: '12px 16px', font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase' }}>Lab Orders</th>
+                <th style={{ padding: '12px 16px', font: '700 10px IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase' }}>Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredPatients.map((patient) => (
+                <tr key={patient.id} style={{ borderBottom: '1px solid rgba(231,185,166,0.4)', transition: 'background .16s ease' }}>
+                  <td style={{ padding: '14px 16px', font: '700 11px IBM Plex Mono, monospace', color: 'var(--coral-deep)' }}>
+                    {patient.id}
+                  </td>
+                  <td style={{ padding: '14px 16px', fontWeight: '700', color: 'var(--rose)' }}>
+                    {patient.name}
+                  </td>
+                  <td style={{ padding: '14px 16px', color: 'var(--rose-soft)' }}>
+                    {patient.age} yrs · {patient.gender}
+                  </td>
+                  <td style={{ padding: '14px 16px' }}>
+                    <span style={{ background: '#ffd5c1', color: 'var(--rose)', padding: '3px 8px', borderRadius: '999px', font: '700 10px IBM Plex Mono, monospace' }}>
+                      {patient.blood || patient.bloodGroup || 'O+'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '14px 16px', font: '600 11px IBM Plex Mono, monospace', color: 'var(--rose-soft)' }}>
+                    {patient.phone}
+                  </td>
+                  <td style={{ padding: '14px 16px', fontWeight: '700', color: 'var(--rose)' }}>
+                    {patient.ordersCount} orders
+                  </td>
+                  <td style={{ padding: '14px 16px' }}>
+                    <button className="workspace-chip" style={{ padding: '4px 10px', fontSize: '10px' }}>
+                      <span>View History</span>
+                      <ArrowRight size={11} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

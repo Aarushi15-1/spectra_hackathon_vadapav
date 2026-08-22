@@ -1,61 +1,33 @@
 import React from 'react';
+import { ShieldCheck, Server, RefreshCw } from 'lucide-react';
 import HealthStatusBadge from './HealthStatusBadge';
-import { Search, Bell } from 'lucide-react';
 
-const Header = ({ title, onHealthStatusChange }) => {
+const Header = ({ title, activeTab, onHealthStatusChange }) => {
   return (
-    <header className="top-header">
-      <div className="header-title">
-        <h2>{title}</h2>
+    <header className="app-header">
+      <div className="page-heading">
+        <p>Spectra Laboratory Gateway · ABDM / HL7 FHIR Pipeline</p>
+        <h1>{title}</h1>
       </div>
 
-      <div className="header-actions">
-        {/* Live Backend Connection Indicator */}
-        <HealthStatusBadge onStatusChange={onHealthStatusChange} />
-
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-          <Search size={16} style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)' }} />
-          <input
-            type="text"
-            placeholder="Search patients, tests, orders..."
-            style={{
-              padding: '0.45rem 0.9rem 0.45rem 2.2rem',
-              borderRadius: '9999px',
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-color)',
-              color: 'var(--text-main)',
-              fontSize: '0.85rem',
-              outline: 'none',
-              width: '220px'
-            }}
-          />
+      <div className="header-tools">
+        {/* Workspace Switcher */}
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <span style={{ fontSize: '10px', fontFamily: 'IBM Plex Mono, monospace', color: 'var(--rose-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginRight: '4px' }}>Workspace:</span>
+          <span className="workspace-chip">Patient</span>
+          <span className="workspace-chip">Doctor</span>
+          <span className="workspace-chip active">Laboratory</span>
         </div>
 
-        <button
-          style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-color)',
-            color: 'var(--text-muted)',
-            padding: '0.5rem',
-            borderRadius: '50%',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          title="Notifications"
-        >
-          <Bell size={18} />
-        </button>
+        <HealthStatusBadge onStatusChange={onHealthStatusChange} />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', paddingLeft: '0.5rem', borderLeft: '1px solid var(--border-color)' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-red), var(--accent-orange))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '0.85rem' }}>
-            LC
-          </div>
-          <div style={{ fontSize: '0.825rem' }}>
-            <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>Lab Admin</div>
-            <div style={{ fontSize: '0.725rem', color: 'var(--accent-orange)', fontWeight: '700' }}>PATHOLOGIST</div>
-          </div>
+        <div className="demo-label">
+          <ShieldCheck size={13} />
+          <span>PROD GATEWAY</span>
+        </div>
+
+        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--coral)', color: 'var(--cream)', display: 'grid', placeItems: 'center', fontWeight: '700', fontSize: '11px', fontFamily: 'IBM Plex Mono, monospace', border: '1px solid var(--coral)' }}>
+          LC
         </div>
       </div>
     </header>

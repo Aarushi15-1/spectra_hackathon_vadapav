@@ -15,14 +15,14 @@ function App() {
 
   const getTitleForTab = () => {
     switch (activeTab) {
-      case 'dashboard': return 'Dashboard Overview';
-      case 'patients': return 'Patient Records';
-      case 'lab-tests': return 'Diagnostic Test Catalog';
-      case 'lab-reports': return 'Diagnostic Reports';
-      case 'laboratories': return 'Partner Laboratories';
-      case 'appointments': return 'Sample Collection Appointments';
-      case 'profile': return 'User Profile & Settings';
-      default: return 'Dashboard';
+      case 'dashboard': return 'Diagnostic Command Centre';
+      case 'patients': return 'ABHA Patient Directory';
+      case 'lab-tests': return 'Diagnostic Panel Catalog';
+      case 'lab-reports': return 'FHIR Diagnostic Reports';
+      case 'laboratories': return 'Accredited Lab Network';
+      case 'appointments': return 'Specimen Collection Queues';
+      case 'profile': return 'Pathologist Station & Config';
+      default: return 'Laboratory Gateway';
     }
   };
 
@@ -48,11 +48,12 @@ function App() {
   };
 
   return (
-    <div className="app-container">
+    <div className="app-shell">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main className="main-content">
+      <main className="app-canvas">
         <Header
           title={getTitleForTab()}
+          activeTab={activeTab}
           onHealthStatusChange={(status) => setBackendHealth(status)}
         />
         {renderActiveView()}

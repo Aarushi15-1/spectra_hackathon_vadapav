@@ -7,59 +7,57 @@ import {
   Building2,
   Calendar,
   User,
-  Activity,
-  HeartPulse
+  FlaskConical
 } from 'lucide-react';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'patients', label: 'Patients', icon: Users },
-  { id: 'lab-tests', label: 'Lab Tests', icon: TestTube },
-  { id: 'lab-reports', label: 'Lab Reports', icon: FileText },
-  { id: 'laboratories', label: 'Laboratories', icon: Building2 },
-  { id: 'appointments', label: 'Appointments', icon: Calendar },
-  { id: 'profile', label: 'Profile', icon: User },
+  { id: 'patients', label: 'Patient Registry', icon: Users },
+  { id: 'lab-tests', label: 'Test Catalog', icon: FlaskConical },
+  { id: 'lab-reports', label: 'Diagnostic Reports', icon: FileText },
+  { id: 'laboratories', label: 'Lab Network', icon: Building2 },
+  { id: 'appointments', label: 'Collections', icon: Calendar },
+  { id: 'profile', label: 'Operator Profile', icon: User },
 ];
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header">
-        <div className="brand-icon">
-          <HeartPulse size={24} />
-        </div>
-        <div className="brand-text">
-          <h1>HealthBridge</h1>
-          <span>LabConnect</span>
-        </div>
+    <aside className="app-rail">
+      <div className="brand-lockup">
+        <span className="signal-logo">
+          <i className="logo-lobe lobe-a"></i>
+          <i className="logo-lobe lobe-b"></i>
+          <i className="logo-lobe lobe-c"></i>
+          <span className="logo-pulse">~</span>
+        </span>
+        <span>
+          Spectra<br />Health
+        </span>
       </div>
 
-      <nav style={{ marginTop: '0.5rem' }}>
-        <ul className="nav-list">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <li key={item.id}>
-                <button
-                  className={`nav-item ${isActive ? 'active' : ''}`}
-                  onClick={() => setActiveTab(item.id)}
-                  style={{ width: '100%', border: 'none', textAlign: 'left', background: 'transparent' }}
-                >
-                  <Icon size={18} />
-                  <span>{item.label}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+      <nav>
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              className={`nav-item ${isActive ? 'active' : ''}`}
+              onClick={() => setActiveTab(item.id)}
+            >
+              <Icon size={16} />
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
       </nav>
 
-      <div style={{ marginTop: 'auto', padding: '1.25rem', borderTop: '1px solid var(--border-color)' }}>
-        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Spectra Hackathon</div>
-          <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--accent-cyan)' }}>LabConnect Module v1.0</div>
+      <div className="rail-bottom">
+        <div style={{ background: 'rgba(255,247,239,0.08)', padding: '12px', borderRadius: '6px', border: '1px solid rgba(255,247,239,0.12)' }}>
+          <div style={{ fontSize: '9px', fontFamily: 'IBM Plex Mono, monospace', color: '#f7b4a8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>ABDM · HL7 · FHIR R4</div>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--cream)', marginTop: '3px' }}>LabConnect v1.0</div>
         </div>
+        <p>SECURE HEALTH DATA HIGHWAY · NHA PROTOCOL</p>
       </div>
     </aside>
   );

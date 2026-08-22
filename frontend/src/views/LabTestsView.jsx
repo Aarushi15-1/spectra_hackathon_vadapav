@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Clock, TestTube, CheckCircle2 } from 'lucide-react';
+import { Plus, Clock, FlaskConical, Check, ArrowRight } from 'lucide-react';
 import { fetchLabTests } from '../services/apiService';
 
 const defaultCatalog = [
@@ -33,42 +33,62 @@ const LabTestsView = () => {
   }, []);
 
   return (
-    <div className="view-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div>
+      <div className="section-heading" style={{ marginBottom: '22px' }}>
         <div>
-          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: '800', color: '#ffffff' }}>Diagnostic Test Catalog</h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Configured diagnostic panels, biomarkers, turnaround times, and pricing</p>
+          <p className="section-index">01 / DIAGNOSTIC SPECIFICATIONS</p>
+          <h2 style={{ font: '700 28px Bricolage Grotesque, sans-serif', letterSpacing: '-.06em', color: 'var(--rose)', margin: '4px 0 0' }}>
+            Diagnostic Test Catalog & Parameter Definitions
+          </h2>
         </div>
-        <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Plus size={16} />
-          <span>Add Test Panel</span>
+        <button className="signal-button">
+          <Plus size={15} />
+          <span>New Test Definition</span>
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
-        {catalog.map((test) => (
-          <div key={test.code} className="stat-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-              <span className="badge badge-info">{test.category}</span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--accent-emerald)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <CheckCircle2 size={12} /> Active
-              </span>
-            </div>
-
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', gap: '16px' }}>
+        {catalog.map((test, idx) => (
+          <div
+            key={test.code}
+            className="ticket-card"
+            style={{
+              padding: '24px',
+              boxShadow: idx % 2 === 0 ? '10px 12px 0 var(--blush)' : '10px 12px 0 #f7d891',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              marginBottom: 0
+            }}
+          >
             <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--accent-cyan)', fontWeight: '700', marginBottom: '0.25rem' }}>{test.code}</div>
-              <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: '700', color: '#ffffff' }}>{test.name}</h4>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ background: '#ffd5c1', color: 'var(--rose)', padding: '3px 8px', borderRadius: '999px', font: '700 9px IBM Plex Mono, monospace' }}>
+                  {test.category}
+                </span>
+                <span style={{ font: '700 9px IBM Plex Mono, monospace', color: 'var(--coral-deep)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Check size={12} /> ACTIVE
+                </span>
+              </div>
+
+              <div style={{ font: '700 11px IBM Plex Mono, monospace', color: 'var(--coral-deep)', marginBottom: '3px' }}>
+                {test.code}
+              </div>
+              <h4 style={{ font: '700 20px Bricolage Grotesque, sans-serif', letterSpacing: '-.04em', color: 'var(--rose)', margin: '0 0 12px' }}>
+                {test.name}
+              </h4>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', borderTop: '1px solid var(--border-color)', paddingTop: '0.85rem', fontSize: '0.825rem', color: 'var(--text-muted)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--line)', paddingTop: '14px', marginTop: '10px' }}>
               <div>
-                <span style={{ color: '#ffffff', fontWeight: '700' }}>{test.parameters}</span> Parameters
+                <span style={{ font: '700 13px Bricolage Grotesque, sans-serif', color: 'var(--rose)' }}>{test.parameters}</span>
+                <span style={{ color: 'var(--rose-soft)', fontSize: '10px', marginLeft: '4px' }}>Parameters</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                <Clock size={13} color="var(--accent-amber)" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--rose-soft)', fontSize: '11px' }}>
+                <Clock size={12} color="var(--marigold)" />
                 <span>{test.turnaround}</span>
               </div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.05rem', fontWeight: '800', color: 'var(--accent-emerald)' }}>
+              <div style={{ font: '700 16px IBM Plex Mono, monospace', color: 'var(--coral)' }}>
                 {test.price}
               </div>
             </div>
