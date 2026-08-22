@@ -28,7 +28,8 @@ import {
   Plus,
   Trash2,
   Activity,
-  LogOut
+  LogOut,
+  KeyRound
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, Doctor, HealthRecordItem, AppointmentItem, PatientUser, PrescriptionItem } from "@/lib/api";
