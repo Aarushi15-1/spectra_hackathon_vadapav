@@ -1,0 +1,18 @@
+target/
+*.class
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Node / Web
+node_modules/
+dist/
+build/
+.pnpm-store/
+.vite/
+.env.local
+*.log
+
+# Maven tools
+tools/
