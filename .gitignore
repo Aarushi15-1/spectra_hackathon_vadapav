@@ -1,27 +1,24 @@
 # Maven build output
 backend/target/
 target/
+*.class
 
 # Node dependencies & dist
 node_modules/
-<<<<<<< HEAD
-frontend/node_modules/
-frontend/dist/
-=======
 **/node_modules/
 dist/
 **/dist/
 build/
 **/build/
+frontend/dist/
 .pnpm-store/
 .vite/
 .env.local
-*.log
->>>>>>> origin/main
 
-# Local tools & downloads
+# Local tools & scratch
 .gemini/
 scratch/
+tools/
 
 # IDE & Editor files
 .vscode/

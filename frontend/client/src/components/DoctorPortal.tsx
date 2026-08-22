@@ -65,6 +65,11 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({ onSwitchToPatient, o
   const [selectedRecordIndex, setSelectedRecordIndex] = useState(0);
   const [fhirModalOpen, setFhirModalOpen] = useState(false);
 
+  // Patient Consent OTP Challenge State
+  const [consentOtpModalOpen, setConsentOtpModalOpen] = useState(false);
+  const [consentOtp, setConsentOtp] = useState(["1", "2", "3", "4", "5", "6"]);
+  const [isVerifyingConsent, setIsVerifyingConsent] = useState(false);
+
   // Write Encounter & Prescription Authoring State
   const [newTitle, setNewTitle] = useState("Cardiology Review & Antihypertensive Prescription");
   const [newType, setNewType] = useState<HealthRecordItem["recordType"]>("MEDICATION_REQUEST");
@@ -170,7 +175,25 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({ onSwitchToPatient, o
     }
   };
 
-  const handleRequestAccess = async () => {
+  const handleInitiateConsent = () => {
+    if (!qrToken.trim()) {
+      toast.error("Please scan or enter a patient QR token first.");
+      return;
+    }
+    setConsentOtpModalOpen(true);
+    toast.info("ABDM Consent OTP Dispatched", {
+      description: `6-Digit authorization PIN sent to patient's registered mobile (+91 ••••••4529)`
+    });
+  };
+
+  const handleVerifyConsentOtp = async () => {
+    const fullOtp = consentOtp.join("");
+    if (fullOtp.length !== 6) {
+      toast.error("Please enter the complete 6-digit OTP.");
+      return;
+    }
+
+    setIsVerifyingConsent(true);
     const scopes: string[] = [];
     if (scopeDiagnostic) scopes.push("DIAGNOSTIC_REPORTS");
     if (scopePrescription) scopes.push("PRESCRIPTIONS");
@@ -185,12 +208,15 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({ onSwitchToPatient, o
         durationDays
       );
       setAccessGranted(true);
-      toast.success("Consent Authorization Registered", {
-        description: `Purpose: ${purpose} · Validity: ${durationDays} days`
+      setConsentOtpModalOpen(false);
+      toast.success("Patient Verified & Consent Granted! 🎉", {
+        description: `Scoped access approved for ${durationDays} days · Decrypting locker...`
       });
       setActiveTab("records");
     } catch (e) {
-      toast.error("Access request failed");
+      toast.error("Consent verification failed. Invalid OTP or session expired.");
+    } finally {
+      setIsVerifyingConsent(false);
     }
   };
 
@@ -1122,14 +1148,15 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({ onSwitchToPatient, o
               <div className="mt-8 pt-4 border-t border-[var(--line)] flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs text-[var(--rose-soft)]">
                   <ShieldCheck size={16} className="text-emerald-600" />
-                  <span>ABDM Cryptographic Signature</span>
+                  <span>ABDM Cryptographic Consent Protocol</span>
                 </div>
                 <button
                   type="button"
-                  onClick={handleRequestAccess}
+                  onClick={handleInitiateConsent}
                   className="bg-[var(--rose)] hover:bg-black text-[var(--cream)] font-bold text-xs px-6 py-3 rounded-xl flex items-center gap-2 transition-transform active:scale-95 shadow-sm"
                 >
-                  Authorize & View Patient Locker <ArrowRight size={16} />
+                  <KeyRound size={16} className="text-[var(--marigold)]" />
+                  Request Access & Dispatch Patient OTP <ArrowRight size={16} />
                 </button>
               </div>
             </div>
@@ -1291,6 +1318,95 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({ onSwitchToPatient, o
           <pre className="bg-[var(--rose)] text-[#ffe6dc] p-4 rounded-xl text-xs font-mono overflow-x-auto max-h-96 leading-relaxed">
             {selectedRecord?.fhirResourceJson || JSON.stringify(patientRecords, null, 2)}
           </pre>
+        </DialogContent>
+      </Dialog>
+
+      {/* ABDM Patient Consent OTP Verification Challenge Modal */}
+      <Dialog open={consentOtpModalOpen} onOpenChange={setConsentOtpModalOpen}>
+        <DialogContent className="max-w-md bg-[var(--cream)] border border-[var(--line)] text-[var(--rose)] p-6 rounded-3xl">
+          <DialogHeader>
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mb-3">
+              <ShieldCheck size={26} />
+            </div>
+            <DialogTitle className="font-['Bricolage_Grotesque'] text-2xl font-bold">
+              Patient Consent Verification
+            </DialogTitle>
+            <DialogDescription className="text-xs text-[var(--rose-soft)] leading-relaxed">
+              An ABDM Scoped Consent challenge has been dispatched to <strong>{scannedPatient?.patientName || "Aarav Sharma"}</strong>'s registered mobile number (<strong>+91 ••••••4529</strong>).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 my-4">
+            <div className="bg-[var(--paper)] p-3.5 rounded-2xl border border-[var(--line)] space-y-1.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-[var(--rose-soft)]">Purpose:</span>
+                <span className="font-bold text-[var(--rose)]">{purpose}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--rose-soft)]">Requested Scopes:</span>
+                <span className="font-bold text-[var(--coral-deep)]">
+                  {[
+                    scopeDiagnostic && "Diagnostic",
+                    scopePrescription && "Prescriptions",
+                    scopeEncounters && "Encounters"
+                  ].filter(Boolean).join(", ")}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--rose-soft)]">Validity:</span>
+                <span className="font-bold text-[var(--rose)]">{durationDays} Days</span>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-bold text-[var(--rose)]">Enter 6-Digit Patient OTP</label>
+                <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                  Demo Code: 123456
+                </span>
+              </div>
+              <div className="flex gap-2 justify-center">
+                {consentOtp.map((digit, idx) => (
+                  <input
+                    key={idx}
+                    id={`consent-otp-${idx}`}
+                    type="text"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const next = [...consentOtp];
+                      next[idx] = val;
+                      setConsentOtp(next);
+                      if (val && idx < 5) {
+                        const nextEl = document.getElementById(`consent-otp-${idx + 1}`);
+                        if (nextEl) nextEl.focus();
+                      }
+                    }}
+                    className="w-11 h-13 text-center text-lg font-mono font-bold bg-white border border-[var(--line)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--coral)]"
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setConsentOtpModalOpen(false)}
+              className="flex-1 bg-white border border-[var(--line)] hover:bg-[var(--paper)] text-[var(--rose)] font-bold text-xs py-3 rounded-xl transition-colors"
+            >
+              Cancel Request
+            </button>
+            <button
+              type="button"
+              onClick={handleVerifyConsentOtp}
+              disabled={isVerifyingConsent}
+              className="flex-1 bg-[var(--coral-deep)] hover:bg-[var(--coral)] text-white font-bold text-xs py-3 rounded-xl transition-transform active:scale-95 shadow-sm flex items-center justify-center gap-1.5"
+            >
+              {isVerifyingConsent ? "Decrypting..." : "Verify & Decrypt Locker"}
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
